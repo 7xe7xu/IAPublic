@@ -1733,14 +1733,23 @@ function Exportar-InfoSistema {
             return $null
         }
     }
-    function Format-Content {
-        param ([string]$content)
-        
-        $lines = $content -split "`r?`n" | ForEach-Object { $_.Trim() }
-        $formattedContent = ($lines | Where-Object { $_ -match '\S' }) -join "<br>"
-        
-        return $formattedContent
-    }
+        # Función para formatear el contenido
+        function Format-Content {
+			param (
+				[Parameter(ValueFromPipeline = $true)]
+				[string]$Content
+			)
+			process {
+				if ($Content -is [array]) {
+					$Content | ConvertTo-Html -Fragment -As List
+				} elseif ($Content -is [hashtable]) {
+					$props = $Content.GetEnumerator() | Select-Object @{Name="Nombre";Expression={$_.Key}},@{Name="Valor";Expression={$_.Value}}
+					$props | ConvertTo-Html -Fragment -As List
+				} else {
+					$Content -replace '<table>', '<table class="content">' -replace '<th>', '<th style="background-color: #1A1A1A; color: #FFFFFF;">' -replace '<td>', '<td style="background-color: #1A1A1A; color: #FFFFFF;">'
+				}
+			}
+		}
 
     function Get-HTMLContent {
         $htmlContent = @"
@@ -1858,18 +1867,21 @@ function Exportar-InfoSistema {
 <p class='date-time'>$(Get-Date -Format "HH:mm")</p>
 "@
 
-        $sectionId = 0
-        foreach ($seccion in $infoSecciones) {
-            $sectionId++
-            $contenidoFormateado = Format-Content $seccion.Contenido
-            $htmlContent += @"
-<h2>$($seccion.Titulo)</h2>
+         $sectionId = 0
+    foreach ($seccion in $infoSecciones) {
+        $sectionId++
+        $contenidoFormateado = Format-Content $seccion.Contenido
+        
+        $htmlContent += @"
 <div class="content">
-    <div id="section$sectionId">$contenidoFormateado</div>
+    <h2>$($seccion.Titulo)</h2>
+    <div id="section$sectionId">
+        $($contenidoFormateado)
+    </div>
     <button class="copy-btn" onclick="copyToClipboard('section$sectionId')">Copiar</button>
 </div>
 "@
-        }
+    }
 
         $htmlContent += @"
 <footer>
