@@ -1,4 +1,4 @@
-﻿function Escribir-Centrado {
+function Escribir-Centrado {
     param(
         [string]$Texto,
         [string]$ColorDeFondo = $host.UI.RawUI.ForegroundColor,
@@ -106,7 +106,7 @@ function Mostrar-MenuHardware {
 
         $menuItems = @(
 			
-	    "===============================================",
+			"===============================================",
 			"",
             "      Información de hardware en $NombreEquipo",
             "",
@@ -225,7 +225,7 @@ function Consultar-ResumenSistema {
         "Servidores DNS: $($network.DNSServerSearchOrder -join ', ')",
         "Dirección MAC: $($network.MACAddress)",
         "Usuario actual: $env:USERNAME",
-	"Último reinicio: $lastBootUpTime",
+		"Último reinicio: $lastBootUpTime",
         "Tiempo de actividad: $($uptime.Days) días, $($uptime.Hours) horas, $($uptime.Minutes) minutos"
         
     )
@@ -807,6 +807,11 @@ function Consultar-InfoUsuarios {
 
     $Global:InfoUsuariosHTML = $Global:InfoUsuariosHTML -join ""
 
+<#     if (-not $ParaHTML) {
+        Escribir-Centrado ""
+        Escribir-Centrado "Presiona cualquier tecla para continuar..."
+        [void][System.Console]::ReadKey($true)
+    } #>
 }
 
 function Consultar-Políticas {
@@ -824,7 +829,9 @@ function Consultar-Políticas {
     Escribir-Centrado ""
 
     try {
-        $gpresultOutput = gpresult /r /s $NombreEquipo | # Ejecutar gpresult /r y filtrar las líneas no deseadas
+        # Ejecutar gpresult /r y filtrar las líneas no deseadas
+		
+        $gpresultOutput = gpresult /r /s $NombreEquipo | 
             Select-Object -Skip 9 |  # Omitir las primeras 9 líneas
             Where-Object { $_ -notmatch "Creado el" } |  # Omitir la línea que contiene "Creado el"
             ForEach-Object { $_.Trim() } |  # Eliminar espacios en blanco al inicio y final de cada línea
@@ -889,85 +896,95 @@ function Consultar-Controladores {
 
 function Consultar-SoftwareInstalado {
     param(
-        [switch]$ParaHTML,
+        [switch]$PorFabricante,
         [Parameter(Mandatory=$false)]
         [string]$NombreEquipo = $env:COMPUTERNAME
     )
 
-    if ($ParaHTML) {
-        return Get-SoftwarePorFabricante
-    }
-
-    do {
-        Clear-Host
-        Mostrar-BannerInf
-        Escribir-Centrado "======================================" -ColorDeFondo "Cyan"
-        Escribir-Centrado "Información sobre software instalado" -ColorDeFondo "Cyan"
-        Escribir-Centrado "======================================" -ColorDeFondo "Cyan"
-        Escribir-Centrado ""
-
-        # Obtener la lista de software instalado (solo si no se ha obtenido antes)
-        if (-not $softwareOrdenado) {
-            try {
-                $software = Get-WmiObject -Class Win32_Product -ComputerName $NombreEquipo | Select-Object Name, Version, Vendor, InstallDate
-                $softwareOrdenado = $software | Sort-Object Name
+    if ($PorFabricante) {
+        $fabricantes = Get-WmiObject -Class Win32_Product -ComputerName $NombreEquipo | Group-Object -Property Vendor
+        $output = "Software instalado por fabricante:`n"
+        foreach ($fabricante in $fabricantes) {
+            $output += "Fabricante: $($fabricante.Name)`n"
+            $output += "Número de programas: $($fabricante.Count)`n"
+            $output += "Programas:`n"
+            foreach ($prog in $fabricante.Group) {
+                $output += "- $($prog.Name) (Versión: $($prog.Version))`n"
+                if ($prog.InstallDate) {
+                    $fecha = [DateTime]::ParseExact($prog.InstallDate, "yyyyMMdd", $null)
+                    $output += "Fecha de instalación: $(Get-Date -Format 'dd/MM/yyyy' -Date $fecha)`n"
+                } else {
+                    $output += "Fecha de instalación: No disponible`n"
+                }
             }
-            catch {
-                Escribir-Centrado "Error al obtener información del software en $NombreEquipo: $_" -ColorDeTexto "Rojo"
-                return
-            }
+            $output += "---------------------------`n"
         }
-
-        Escribir-Centrado "1. Mostrar todo el software instalado"
-        Escribir-Centrado "2. Buscar software específico"
-        Escribir-Centrado "3. Mostrar software instalado en los últimos 30 días"
-        Escribir-Centrado "4. Mostrar software por fabricante"
-        Escribir-Centrado "0. Volver al menú principal"
-        Escribir-Centrado ""
-
-        $opcion = Read-Host (Escribir-Centrado "Seleccione una opción (0-4)" -NoNewline)
-
-        switch ($opcion) {
-            "1" { Mostrar-TodoSoftware }
-            "2" { Buscar-Software }
-            "3" { Mostrar-SoftwareReciente }
-            "4" { Mostrar-SoftwarePorFabricante }
-            "0" { return }
-            default { Escribir-Centrado "Opción incorrecta, por favor seleccione una opción válida." -ColorDeTexto "Rojo" }
-        }
-
-        if ($opcion -ne "0") {
+        return $output
+    } else {
+        # Aquí va el código para el menú interactivo
+        do {
+            Mostrar-BannerInf
+            Escribir-Centrado "======================================" -ColorDeFondo "Cyan"
+            Escribir-Centrado "Información sobre software instalado" -ColorDeFondo "Cyan"
+            Escribir-Centrado "======================================" -ColorDeFondo "Cyan"
             Escribir-Centrado ""
-            Escribir-Centrado "Presione cualquier tecla para continuar..."
-            [void][System.Console]::ReadKey($true)
-        }
 
-    } while ($opcion -ne "0")
-}
-
-function Get-SoftwarePorFabricante {
-    $fabricantes = Get-WmiObject -Class Win32_Product -ComputerName $NombreEquipo | Group-Object -Property Vendor
-    $output = "<h3>Software instalado por fabricante:</h3>"
-    foreach ($fabricante in $fabricantes) {
-        $output += "<h4>Fabricante: $($fabricante.Name)</h4>"
-        $output += "Número de programas: $($fabricante.Count)<br>"
-        $output += "Programas:<br><ul>"
-        foreach ($prog in $fabricante.Group) {
-            $output += "<li>$($prog.Name) (Versión: $($prog.Version))"
-            if ($prog.InstallDate) {
-                $fecha = [DateTime]::ParseExact($prog.InstallDate, "yyyyMMdd", $null)
-                $output += " - Fecha de instalación: $(Get-Date -Format 'dd/MM/yyyy' -Date $fecha)"
-            } else {
-                $output += " - Fecha de instalación: No disponible"
+            # Obtener la lista de software instalado (solo si no se ha obtenido antes)
+            if (-not $softwareOrdenado) {
+                try {
+                    $software = Get-WmiObject -Class Win32_Product -ComputerName $NombreEquipo | Select-Object Name, Version, Vendor, InstallDate
+                    $softwareOrdenado = $software | Sort-Object Name
+                }
+                catch {
+                    Escribir-Centrado "Error al obtener información del software en $NombreEquipo $_" -ColorDeTexto "Rojo"
+                    return
+                }
             }
-            $output += "</li>"
-        }
-        $output += "</ul>"
-    }
-    return $output
+
+            Escribir-Centrado "1. Mostrar todo el software instalado"
+			Escribir-Centrado "2. Buscar software específico"
+			Escribir-Centrado "3. Mostrar software instalado en los últimos 30 días"
+			Escribir-Centrado "4. Mostrar software por fabricante"
+			Escribir-Centrado "0. Volver al menú principal info_equipo"
+			Escribir-Centrado ""
+
+			Escribir-Centrado "Seleccione una opción (0-4): " -NoNewline
+			$opcion = Read-Host
+
+			$output = @()
+
+			switch ($opcion) {
+				"1" { Mostrar-TodoSoftware }
+				"2" { Buscar-Software }
+				"3" { Mostrar-SoftwareReciente }
+				"4" { Mostrar-SoftwarePorFabricante }
+				"0" { return }
+				default { 
+					Escribir-Centrado "Opción incorrecta, por favor seleccione una opción válida." -ColorDeTexto "Rojo"
+					Start-Sleep -Seconds 2
+				}
+			}
+
+			# Mostrar la salida
+			if ($output.Count -gt 0) {
+				Write-Host ""
+				foreach ($line in $output) {
+					Escribir-Centrado $line
+				}
+			}
+
+# Pausa personalizada solo si no se seleccionó la opción 0
+if ($opcion -ne "0") { 
+    Escribir-Centrado ""
+    Escribir-Centrado "Presione cualquier tecla para continuar..." -NoNewline
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    Escribir-Centrado ""
 }
 
-# Funciones auxiliares para cada opción del menú
+        } while ($opcion -ne "0")  # Continuar mostrando el menú hasta que se seleccione la opción 0
+    }
+}
+
 function Mostrar-TodoSoftware {
     Escribir-Centrado "Software instalado:" -ColorDeFondo "Yellow"
     foreach ($prog in $softwareOrdenado) {
@@ -1242,8 +1259,43 @@ function Consultar-Seguridad {
 
 function Exportar-InfoSistema {
     param(
+        [Parameter(Mandatory=$false)]
+        [ValidateNotNullOrEmpty()]
         [string]$NombreEquipo = $env:COMPUTERNAME
     )
+
+    # Validar que el equipo sea accesible
+    if (-not (Test-Connection -ComputerName $NombreEquipo -Count 1 -Quiet)) {
+        Write-Error "No se puede conectar al equipo $NombreEquipo"
+        return
+    }
+
+    # Validación de la ruta de salida
+    do {
+        $outputPath = Read-Host 'Ruta para guardar el informe HTML, p. ej. C:\Temp [Escritorio]'
+        if ([string]::IsNullOrWhiteSpace($outputPath)) {
+            $outputPath = [Environment]::GetFolderPath("Desktop")
+        }
+        if (-not (Test-Path $outputPath -IsValid)) {
+            Write-Warning "La ruta especificada no es válida. Por favor, intente de nuevo."
+        }
+    } while (-not (Test-Path $outputPath -IsValid))
+
+    # Validación del nombre del archivo
+    do {
+        $outputFile = Read-Host "Introduce el nombre del archivo sin extensión [info_$NombreEquipo]"
+        if ([string]::IsNullOrWhiteSpace($outputFile)) {
+            $outputFile = "info_$NombreEquipo"
+        }
+        if (-not ($outputFile -match '^[\w\-. ]+$')) {
+            Write-Warning "El nombre del archivo contiene caracteres no válidos. Por favor, intente de nuevo."
+        }
+    } while (-not ($outputFile -match '^[\w\-. ]+$'))
+
+    # Asegurar que el archivo tenga extensión .html
+    if (-not ($outputFile.EndsWith('.html', [StringComparison]::OrdinalIgnoreCase))) {
+        $outputFile += '.html'
+    }
 
     Mostrar-BannerInf
     Escribir-Centrado "==============================" -ColorDeFondo "Cyan"
@@ -1335,14 +1387,14 @@ function Exportar-InfoSistema {
 		@{Titulo="Baterías"; Contenido=(Format-Content $Global:InfoBateriaHTML)},
 		@{Titulo="Actualizaciones"; Contenido=(Format-Content $Global:InfoActualizacionesHTML)},
 		@{Titulo="Sistema operativo"; Contenido=(Format-Content $Global:InfoSOHTML)},
-        	@{Titulo="Servicios relevantes"; Contenido=(Format-Content (Consultar-EstadoServicios -NombreEquipo))},
-        	@{Titulo="Usuarios"; Contenido=(Format-Content (Consultar-Usuarios -NombreEquipo))},
-        	@{Titulo="Políticas y grupos"; Contenido=(Format-Content (Consultar-PoliticasGrupos -NombreEquipo))},
-        	@{Titulo="Controladores"; Contenido=(Format-Content (Consultar-Controladores -NombreEquipo))},
-        	@{Titulo="Software instalado ordenado por fabricante"; Contenido=(Consultar-SoftwareInstalado -ParaHTML -NombreEquipo $NombreEquipo)}
-        	@{Titulo="Arranque"; Contenido=(Format-Content (Consultar-Arranque -NombreEquipo))},
-        	@{Titulo="Energía"; Contenido=(Format-Content (Consultar-Energia -NombreEquipo))},
-        	@{Titulo="Seguridad"; Contenido=(Format-Content (Consultar-Seguridad -NombreEquipo))}
+        @{Titulo="Servicios relevantes"; Contenido=(Format-Content (Consultar-EstadoServicios -NombreEquipo))},
+        @{Titulo="Usuarios"; Contenido=(Format-Content (Consultar-Usuarios -NombreEquipo))},
+        @{Titulo="Políticas y grupos"; Contenido=(Format-Content (Consultar-PoliticasGrupos -NombreEquipo))},
+        @{Titulo="Controladores"; Contenido=(Format-Content (Consultar-Controladores -NombreEquipo))},
+        @{Titulo="Software instalado ordenado por fabricante"; Contenido=(Consultar-SoftwareInstalado -PorFabricante -NombreEquipo $NombreEquipo)}
+        @{Titulo="Arranque"; Contenido=(Format-Content (Consultar-Arranque -NombreEquipo))},
+        @{Titulo="Energía"; Contenido=(Format-Content (Consultar-Energia -NombreEquipo))},
+        @{Titulo="Seguridad"; Contenido=(Format-Content (Consultar-Seguridad -NombreEquipo))}
    )
 	
     # Función para generar el contenido HTML
