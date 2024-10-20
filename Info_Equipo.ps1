@@ -1,9 +1,10 @@
-function Escribir-Centrado {
+﻿function Escribir-Centrado {
     param(
         [string]$Texto,
         [string]$ColorDeFondo = $host.UI.RawUI.ForegroundColor,
         [string]$ColorDeFondoFondo = $host.UI.RawUI.BackgroundColor,
-        [int]$Desplazamiento = 0  # Número de espacios para desplazar el texto
+        [int]$Desplazamiento = 0,  # Número de espacios para desplazar el texto
+        [switch]$NoNewline
     )
 
     $colores = @{
@@ -33,9 +34,12 @@ function Escribir-Centrado {
     $rellenoIzquierdo = [math]::Max(0, [math]::Floor(($anchoConsola - $longitudTexto) / 2)) + $Desplazamiento
     $lineaCentrada = (" " * $rellenoIzquierdo) + $Texto
 
-    Write-Host $lineaCentrada -ForegroundColor $ColorDeFondo -BackgroundColor $ColorDeFondoFondo
+    if ($NoNewline) {
+        Write-Host $lineaCentrada -ForegroundColor $ColorDeFondo -BackgroundColor $ColorDeFondoFondo -NoNewline
+    } else {
+        Write-Host $lineaCentrada -ForegroundColor $ColorDeFondo -BackgroundColor $ColorDeFondoFondo
+    }
 }
-
 function Mostrar-BannerInf {
     param (
         [switch]$Continuo
@@ -901,8 +905,16 @@ function Consultar-SoftwareInstalado {
         [string]$NombreEquipo = $env:COMPUTERNAME
     )
 
+    try {
+        $software = Get-WmiObject -Class Win32_Product -ComputerName $NombreEquipo | Select-Object Name, Version, Vendor, InstallDate
+        $fabricantes = $software | Group-Object -Property Vendor
+    }
+    catch {
+        Escribir-Centrado "Error al obtener información del software en $NombreEquipo': $_" -ColorDeTexto "Rojo"
+        return
+    }
+
     if ($PorFabricante) {
-        $fabricantes = Get-WmiObject -Class Win32_Product -ComputerName $NombreEquipo | Group-Object -Property Vendor
         $output = "Software instalado por fabricante:`n"
         foreach ($fabricante in $fabricantes) {
             $output += "Fabricante: $($fabricante.Name)`n"
@@ -912,157 +924,35 @@ function Consultar-SoftwareInstalado {
                 $output += "- $($prog.Name) (Versión: $($prog.Version))`n"
                 if ($prog.InstallDate) {
                     $fecha = [DateTime]::ParseExact($prog.InstallDate, "yyyyMMdd", $null)
-                    $output += "Fecha de instalación: $(Get-Date -Format 'dd/MM/yyyy' -Date $fecha)`n"
+                    $output += "  Fecha de instalación: $(Get-Date -Format 'dd/MM/yyyy' -Date $fecha)`n"
                 } else {
-                    $output += "Fecha de instalación: No disponible`n"
+                    $output += "  Fecha de instalación: No disponible`n"
                 }
             }
             $output += "---------------------------`n"
         }
         return $output
     } else {
-        # Aquí va el código para el menú interactivo
-        do {
-            Mostrar-BannerInf
-            Escribir-Centrado "======================================" -ColorDeFondo "Cyan"
-            Escribir-Centrado "Información sobre software instalado" -ColorDeFondo "Cyan"
-            Escribir-Centrado "======================================" -ColorDeFondo "Cyan"
-            Escribir-Centrado ""
+        Escribir-Centrado "======================================" -ColorDeFondo "Cyan"
+        Escribir-Centrado "Software instalado por fabricante" -ColorDeFondo "Cyan"
+        Escribir-Centrado "======================================" -ColorDeFondo "Cyan"
+        Escribir-Centrado ""
 
-            # Obtener la lista de software instalado (solo si no se ha obtenido antes)
-            if (-not $softwareOrdenado) {
-                try {
-                    $software = Get-WmiObject -Class Win32_Product -ComputerName $NombreEquipo | Select-Object Name, Version, Vendor, InstallDate
-                    $softwareOrdenado = $software | Sort-Object Name
+        foreach ($fabricante in $fabricantes) {
+            Escribir-Centrado "Fabricante: $($fabricante.Name)" -ColorDeTexto "Verde"
+            Escribir-Centrado "Número de programas: $($fabricante.Count)"
+            Escribir-Centrado "Programas:"
+            foreach ($prog in $fabricante.Group) {
+                Escribir-Centrado "- $($prog.Name) (Versión: $($prog.Version))"
+                if ($prog.InstallDate) {
+                    $fecha = [DateTime]::ParseExact($prog.InstallDate, "yyyyMMdd", $null)
+                    Escribir-Centrado "  Fecha de instalación: $(Get-Date -Format 'dd/MM/yyyy' -Date $fecha)"
+                } else {
+                    Escribir-Centrado "  Fecha de instalación: No disponible"
                 }
-                catch {
-                    Escribir-Centrado "Error al obtener información del software en $NombreEquipo $_" -ColorDeTexto "Rojo"
-                    return
-                }
-            }
-
-            Escribir-Centrado "1. Mostrar todo el software instalado"
-			Escribir-Centrado "2. Buscar software específico"
-			Escribir-Centrado "3. Mostrar software instalado en los últimos 30 días"
-			Escribir-Centrado "4. Mostrar software por fabricante"
-			Escribir-Centrado "0. Volver al menú principal info_equipo"
-			Escribir-Centrado ""
-
-			Escribir-Centrado "Seleccione una opción (0-4): " -NoNewline
-			$opcion = Read-Host
-
-			$output = @()
-
-			switch ($opcion) {
-				"1" { Mostrar-TodoSoftware }
-				"2" { Buscar-Software }
-				"3" { Mostrar-SoftwareReciente }
-				"4" { Mostrar-SoftwarePorFabricante }
-				"0" { return }
-				default { 
-					Escribir-Centrado "Opción incorrecta, por favor seleccione una opción válida." -ColorDeTexto "Rojo"
-					Start-Sleep -Seconds 2
-				}
-			}
-
-			# Mostrar la salida
-			if ($output.Count -gt 0) {
-				Write-Host ""
-				foreach ($line in $output) {
-					Escribir-Centrado $line
-				}
-			}
-
-# Pausa personalizada solo si no se seleccionó la opción 0
-if ($opcion -ne "0") { 
-    Escribir-Centrado ""
-    Escribir-Centrado "Presione cualquier tecla para continuar..." -NoNewline
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-    Escribir-Centrado ""
-}
-
-        } while ($opcion -ne "0")  # Continuar mostrando el menú hasta que se seleccione la opción 0
-    }
-}
-
-function Mostrar-TodoSoftware {
-    Escribir-Centrado "Software instalado:" -ColorDeFondo "Yellow"
-    foreach ($prog in $softwareOrdenado) {
-        Escribir-Centrado "Nombre: $($prog.Name)"
-        Escribir-Centrado "Versión: $($prog.Version)"
-        Escribir-Centrado "Fabricante: $($prog.Vendor)"
-        if ($prog.InstallDate) {
-            $fecha = [DateTime]::ParseExact($prog.InstallDate, "yyyyMMdd", $null)
-            Escribir-Centrado "Fecha de instalación: $(Get-Date -Format 'dd/MM/yyyy' -Date $fecha)"
-        } else {
-            Escribir-Centrado "Fecha de instalación: No disponible"
-        }
-        Escribir-Centrado "---------------------------"
-    }
-}
-
-function Buscar-Software {
-    $busqueda = Read-Host (Escribir-Centrado "Introduzca el nombre del software a buscar" -NoNewline)
-    $resultados = $softwareOrdenado | Where-Object { $_.Name -like "*$busqueda*" }
-    if ($resultados) {
-        Escribir-Centrado "Resultados de la búsqueda para '$busqueda':" -ColorDeFondo "Yellow"
-        foreach ($prog in $resultados) {
-            Escribir-Centrado "Nombre: $($prog.Name)"
-            Escribir-Centrado "Versión: $($prog.Version)"
-            Escribir-Centrado "Fabricante: $($prog.Vendor)"
-            if ($prog.InstallDate) {
-                $fecha = [DateTime]::ParseExact($prog.InstallDate, "yyyyMMdd", $null)
-                Escribir-Centrado "Fecha de instalación: $(Get-Date -Format 'dd/MM/yyyy' -Date $fecha)"
-            } else {
-                Escribir-Centrado "Fecha de instalación: No disponible"
             }
             Escribir-Centrado "---------------------------"
         }
-    } else {
-        Escribir-Centrado "No se encontraron resultados para '$busqueda'." -ColorDeTexto "Amarillo"
-    }
-}
-
-function Mostrar-SoftwareReciente {
-    $fechaLimite = (Get-Date).AddDays(-30)
-    $softwareReciente = $softwareOrdenado | Where-Object { 
-        if ($_.InstallDate) {
-            $fechaInstalacion = [DateTime]::ParseExact($_.InstallDate, "yyyyMMdd", $null)
-            $fechaInstalacion -gt $fechaLimite
-        } else {
-            $false
-        }
-    }
-    Escribir-Centrado "Software instalado en los últimos 30 días:" -ColorDeFondo "Yellow"
-    foreach ($prog in $softwareReciente) {
-        Escribir-Centrado "Nombre: $($prog.Name)"
-        Escribir-Centrado "Versión: $($prog.Version)"
-        Escribir-Centrado "Fabricante: $($prog.Vendor)"
-        if ($prog.InstallDate) {
-            $fecha = [DateTime]::ParseExact($prog.InstallDate, "yyyyMMdd", $null)
-            Escribir-Centrado "Fecha de instalación: $(Get-Date -Format 'dd/MM/yyyy' -Date $fecha)"
-        }
-        Escribir-Centrado "---------------------------"
-    }
-}
-
-function Mostrar-SoftwarePorFabricante {
-    $fabricantes = $softwareOrdenado | Group-Object -Property Vendor
-    Escribir-Centrado "Software por fabricante:" -ColorDeFondo "Yellow"
-    foreach ($fabricante in $fabricantes) {
-        Escribir-Centrado "Fabricante: $($fabricante.Name)" -ColorDeFondo "Verde"
-        Escribir-Centrado "Número de programas: $($fabricante.Count)"
-        Escribir-Centrado "Programas:"
-        foreach ($prog in $fabricante.Group) {
-            Escribir-Centrado "  - $($prog.Name) (Versión: $($prog.Version))"
-            if ($prog.InstallDate) {
-                $fecha = [DateTime]::ParseExact($prog.InstallDate, "yyyyMMdd", $null)
-                Escribir-Centrado "    Fecha de instalación: $(Get-Date -Format 'dd/MM/yyyy' -Date $fecha)"
-            } else {
-                Escribir-Centrado "    Fecha de instalación: No disponible"
-            }
-        }
-        Escribir-Centrado "---------------------------"
     }
 }
 
@@ -1270,6 +1160,12 @@ function Exportar-InfoSistema {
         return
     }
 
+    Mostrar-BannerInf
+    Escribir-Centrado "==============================" -ColorDeFondo "Cyan"
+    Escribir-Centrado "Exportar informe de $NombreEquipo" -ColorDeFondo "Cyan"
+    Escribir-Centrado "==============================" -ColorDeFondo "Cyan"
+    Escribir-Centrado ""
+
     # Validación de la ruta de salida
     do {
         $outputPath = Read-Host 'Ruta para guardar el informe HTML, p. ej. C:\Temp [Escritorio]'
@@ -1281,11 +1177,14 @@ function Exportar-InfoSistema {
         }
     } while (-not (Test-Path $outputPath -IsValid))
 
+    # Definir el nombre del archivo por defecto
+    $defaultFileName = "info_$NombreEquipo.html"
+
     # Validación del nombre del archivo
     do {
-        $outputFile = Read-Host "Introduce el nombre del archivo sin extensión [info_$NombreEquipo]"
+        $outputFile = Read-Host "Introduce el nombre del archivo sin extensión [$defaultFileName]"
         if ([string]::IsNullOrWhiteSpace($outputFile)) {
-            $outputFile = "info_$NombreEquipo"
+            $outputFile = $defaultFileName
         }
         if (-not ($outputFile -match '^[\w\-. ]+$')) {
             Write-Warning "El nombre del archivo contiene caracteres no válidos. Por favor, intente de nuevo."
@@ -1294,32 +1193,6 @@ function Exportar-InfoSistema {
 
     # Asegurar que el archivo tenga extensión .html
     if (-not ($outputFile.EndsWith('.html', [StringComparison]::OrdinalIgnoreCase))) {
-        $outputFile += '.html'
-    }
-
-    Mostrar-BannerInf
-    Escribir-Centrado "==============================" -ColorDeFondo "Cyan"
-    Escribir-Centrado "Exportar informe de $NombreEquipo" -ColorDeFondo "Cyan"
-    Escribir-Centrado "==============================" -ColorDeFondo "Cyan"
-    Escribir-Centrado ""
-
-    # Solicitar la ruta de destino
-    do {
-        $outputPath = Read-Host 'Ruta para guardar el informe HTML, p. ej. C:\Temp [Escritorio]'
-        if ([string]::IsNullOrWhiteSpace($outputPath)) {
-            $outputPath = [Environment]::GetFolderPath("Desktop")
-        }
-    } while (-not (Test-Path $outputPath -IsValid))
-
-    # Definir el nombre del archivo por defecto
-    $defaultFileName = "info_$NombreEquipo.html"
-
-    # Solicitar nombre del archivo para exportar, usando el nombre por defecto si se deja en blanco
-    $outputFile = Read-Host "Introduce el nombre del archivo sin extensión [$defaultFileName]"
-    if ([string]::IsNullOrWhiteSpace($outputFile)) {
-        $outputFile = $defaultFileName
-    }
-    elseif (-not ($outputFile.EndsWith('.html', [StringComparison]::OrdinalIgnoreCase))) {
         $outputFile += '.html'
     }
 
@@ -1391,7 +1264,7 @@ function Exportar-InfoSistema {
         @{Titulo="Usuarios"; Contenido=(Format-Content (Consultar-Usuarios -NombreEquipo))},
         @{Titulo="Políticas y grupos"; Contenido=(Format-Content (Consultar-PoliticasGrupos -NombreEquipo))},
         @{Titulo="Controladores"; Contenido=(Format-Content (Consultar-Controladores -NombreEquipo))},
-        @{Titulo="Software instalado ordenado por fabricante"; Contenido=(Consultar-SoftwareInstalado -PorFabricante -NombreEquipo $NombreEquipo)}
+        @{Titulo="Software instalado"; Contenido=(Format-Content (Consultar-SoftwareInstalado -PorFabricante -NombreEquipo $NombreEquipo))}
         @{Titulo="Arranque"; Contenido=(Format-Content (Consultar-Arranque -NombreEquipo))},
         @{Titulo="Energía"; Contenido=(Format-Content (Consultar-Energia -NombreEquipo))},
         @{Titulo="Seguridad"; Contenido=(Format-Content (Consultar-Seguridad -NombreEquipo))}
