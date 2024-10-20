@@ -184,9 +184,9 @@ function Bitlocker-Status {
     $unidades = Read-Host
     Escribir-Centrado ""
     Mostrar-BannerBit
-    Escribir-Centrado "===============================================" -ColorDeTexto "Red"
-    Escribir-Centrado "Estado de BitLocker" -ColorDeTexto "Red"
-    Escribir-Centrado "===============================================" -ColorDeTexto "Red"
+    Escribir-Centrado "===============================================" -ColorDeFondo "Red"
+    Escribir-Centrado "Estado de BitLocker" -ColorDeFondo "Red"
+    Escribir-Centrado "===============================================" -ColorDeFondo "Red"
     Escribir-Centrado ""
 
     # Si no se especifican unidades, usar C: por defecto
@@ -200,44 +200,52 @@ function Bitlocker-Status {
     foreach ($unidad in $unidadesArray) {
         # Verificar si la unidad tiene el formato correcto
         if ($unidad -notmatch '^[A-Z]:$') {
-            Escribir-Centrado "Formato incorrecto para la unidad $unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ColorDeTexto "Red"
+            Escribir-Centrado "Formato incorrecto para la unidad $unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ColorDeFondo "Red"
             continue
         }
 
-        Escribir-Centrado "Estado de BitLocker para la unidad $unidad" -ColorDeTexto "Cyan"
-		Escribir-Centrado ""
-		
-		# Capturar la salida del comando manage-bde para cada unidad
-		$output = manage-bde -status $unidad -cn $equipo
+        Escribir-Centrado "Estado de BitLocker para la unidad $unidad" -ColorDeFondo "Cyan"
+        Escribir-Centrado ""
+        
+        # Capturar la salida del comando manage-bde para cada unidad
+        $output = manage-bde -status $unidad -cn $equipo
 
-		# Encontrar la longitud de la línea más larga en toda la salida
-		$maxLength = ($output | Measure-Object -Property Length -Maximum).Maximum
+        # Encontrar la longitud de la línea más larga, omitiendo las dos primeras líneas
+        $maxLength = ($output | Select-Object -Skip 2 | Measure-Object -Property Length -Maximum).Maximum
 
-		# Calcular el desplazamiento para alinear a la izquierda
-		$consoleWidth = $Host.UI.RawUI.WindowSize.Width
-		$leftPadding = [Math]::Max(0, ($consoleWidth - $maxLength) / 2)
+        # Calcular el desplazamiento para centrar el bloque de texto
+        $consoleWidth = $Host.UI.RawUI.WindowSize.Width
+        $leftPadding = [Math]::Max(2, ($consoleWidth - $maxLength) / 2)
 
-		# Procesar y mostrar cada línea con el espaciado deseado
-		$output | ForEach-Object {
-			$paddedLine = $_.TrimStart().PadRight($maxLength)
-			Escribir-Centrado $paddedLine -Desplazamiento $leftPadding
-		}
+        # Procesar y mostrar cada línea con el espaciado deseado
+        $output | ForEach-Object -Begin {$lineCount = 0} {
+            if ($lineCount -lt 2) {
+                # Las dos primeras líneas se centran normalmente
+                Escribir-Centrado $_
+            } else {
+                # El resto de las líneas se alinean basándose en la línea más larga
+                $paddedLine = $_.TrimStart().PadRight($maxLength)
+                Write-Host (" " * $leftPadding) $paddedLine
+            }
+            $lineCount++
+        }
 
-		Escribir-Centrado ""
+        Escribir-Centrado ""
     }
-
 }
 
 function Add-Protectors {
-    Write-Host ""
-    $equipo = Read-Host "			 			  Nombre del equipo [este]"
-    $unidades = Read-Host "			 			  Añadir protectores a las unidades (C:,D:,E:...) [C:]"
-    Write-Host ""
+    Escribir-Centrado ""
+    Escribir-Centrado "Nombre del equipo [este]: " -NoNewline
+    $equipo = Read-Host
+    Escribir-Centrado "Añadir protectores a las unidades (C:,D:,E:...) [C:]: " -NoNewline
+    $unidades = Read-Host
+    Escribir-Centrado ""
     Mostrar-BannerBit
-    Write-Host "			 			  ==============================================="
-    Write-Host "			 			         Añadir protectores BitLocker" -ForegroundColor Yellow 
-    Write-Host "			 			  ==============================================="
-    Write-Host
+    Escribir-Centrado "===============================================" -ColorDeFondo "Yellow"
+    Escribir-Centrado "Añadir protectores BitLocker" -ColorDeFondo "Yellow"
+    Escribir-Centrado "===============================================" -ColorDeFondo "Yellow"
+    Escribir-Centrado ""
 
     # Si no se especifican unidades, usar C: por defecto
     if ([string]::IsNullOrWhiteSpace($unidades)) {
@@ -250,25 +258,34 @@ function Add-Protectors {
     foreach ($unidad in $unidadesArray) {
         # Validar que la unidad tenga el formato correcto
         if ($unidad -notmatch '^[A-Z]:$') {
-            Write-Host "			 			  Formato incorrecto para la unidad $unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ForegroundColor Red
+            Escribir-Centrado "Formato incorrecto para la unidad $unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ColorDeFondo "Red"
             continue
         }
 
-        Write-Host "			 			  Añadiendo protectores a la unidad $unidad" -ForegroundColor Cyan
+        Escribir-Centrado "Añadiendo protectores a la unidad $unidad" -ColorDeFondo "Cyan"
 
         # Capturar la salida del comando manage-bde
         $output = manage-bde -protectors -add -tpm -rp $unidad -cn $equipo
 
+        # Encontrar la longitud de la línea más larga
+        $maxLength = ($output | Measure-Object -Property Length -Maximum).Maximum
+
+        # Calcular el desplazamiento para centrar el bloque de texto
+        $consoleWidth = $Host.UI.RawUI.WindowSize.Width
+        $leftPadding = [Math]::Max(0, ($consoleWidth - $maxLength) / 2)
+
         # Procesar y mostrar cada línea con el espaciado deseado
         $output | ForEach-Object {
-            Write-Host "			 			  $_"
+            $paddedLine = $_.TrimStart().PadRight($maxLength)
+            Escribir-Centrado $paddedLine -Desplazamiento $leftPadding
         }
 
-        Write-Host
+        Escribir-Centrado ""
     }
 
-    Write-Host
-    Read-Host "			 			  Presiona Enter para volver al menú"
+    Escribir-Centrado ""
+    Escribir-Centrado "Presiona Enter para volver al menú" -NoNewline
+    Read-Host
 }
 
 function Rmv-Protectors {
