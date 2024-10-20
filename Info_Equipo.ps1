@@ -851,128 +851,6 @@ function Consultar-Políticas {
     $Global:InfoPoliticasHTML = $Global:InfoPoliticasHTML -join ""
 }
 
-<# function Consultar-Controladores {
-    param(
-        [string]$NombreEquipo = $env:COMPUTERNAME,
-        [switch]$ParaHTML = $false
-    )
-
-    if (-not $ParaHTML) {
-        do {
-            Clear-Host
-            Mostrar-BannerInf
-            
-            Escribir-Centrado "==============================================" -ColorDeFondo "Cyan"
-            Escribir-Centrado "Información sobre controladores en $NombreEquipo" -ColorDeFondo "Cyan"
-            Escribir-Centrado "==============================================" -ColorDeFondo "Cyan"
-            Escribir-Centrado ""
-
-            # Opciones del menú
-            Escribir-Centrado "Opciones:" -ColorDeFondo "Yellow"
-            Escribir-Centrado "1. Mostrar controladores instalados"
-            Escribir-Centrado "2. Actualizar todos los controladores (sin probar aún)"
-            Escribir-Centrado "3. Mostrar controladores instalados en los últimos 7 días"
-            Escribir-Centrado "0. Volver al menú principal"
-            Escribir-Centrado ""
-
-            $choice = $null
-            while ($null -eq $choice) {
-                $prompt = "Selecciona una opción (0-3): "
-                $consoleWidth = $Host.UI.RawUI.WindowSize.Width
-                $leftPadding = [math]::Max(0, [math]::Floor(($consoleWidth - $prompt.Length) / 2))
-                $centeredPrompt = (" " * $leftPadding) + $prompt
-                Write-Host $centeredPrompt -NoNewline
-                $choice = Read-Host
-                if ($choice -notin '0','1','2','3') {
-                    Escribir-Centrado "Opción no válida. Por favor, elige 0, 1, 2 o 3." -ColorDeTexto "Rojo"
-                    $choice = $null
-                }
-            }
-            
-            Escribir-Centrado ""
-
-            switch ($choice) {
-                "1" { MostrarControladoresInstalados }
-                "2" { ActualizarControladores }
-                "3" { MostrarControladoresRecientes }
-                "0" { return }
-            }
-
-            if ($choice -ne '0') {
-                Escribir-Centrado ""
-                Escribir-Centrado "Presiona cualquier tecla para volver al menú de controladores..."
-                [void][System.Console]::ReadKey($true)
-            }
-
-        } while ($true)
-    }
-    else {
-        MostrarControladoresInstalados
-    }
-}
-
-function MostrarControladoresInstalados {
-    $Global:InfoControladoresHTML = @()
-    $Global:InfoControladoresHTML += "<h3>Controladores instalados:</h3>"
-
-    $drivers = Get-WmiObject Win32_PnPSignedDriver -ComputerName $NombreEquipo | 
-               Select-Object DeviceName, Manufacturer, DriverVersion |
-               Sort-Object DeviceName
-
-    if ($drivers.Count -eq 0) {
-        Escribir-Centrado "No se encontraron controladores instalados."
-        $Global:InfoControladoresHTML += "No se encontraron controladores instalados.<br>"
-    } else {
-        Escribir-Centrado "Controladores instalados:" -ColorDeFondo "Yellow"
-        Escribir-Centrado "Total de controladores: $($drivers.Count)" -ColorDeFondo "Verde"
-        Escribir-Centrado ""
-        $Global:InfoControladoresHTML += "Total de controladores: $($drivers.Count)<br><br>"
-
-        foreach ($driver in $drivers) {
-            $info = "Dispositivo: $($driver.DeviceName) - Versión: $($driver.DriverVersion)"
-            
-            Escribir-Centrado $info
-            $Global:InfoControladoresHTML += "$info<br>"
-        }
-    }
-}
-
-function ActualizarControladores {
-    if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        Escribir-Centrado "Se requieren privilegios de administrador para actualizar controladores." -ColorDeFondo "Rojo"
-    } else {
-        Escribir-Centrado "Iniciando actualización de controladores... (Esta operación puede tardar varios minutos)"
-        $pnputilOutput = pnputil /scan-devices | ForEach-Object { Escribir-Centrado $_ }
-        Escribir-Centrado "Actualización de controladores completada." -ColorDeFondo "Verde"
-    }
-}
-
-function MostrarControladoresRecientes {
-    $sevenDaysAgo = (Get-Date).AddDays(-7)
-    $recentDrivers = Get-WmiObject Win32_PnPSignedDriver -ComputerName $NombreEquipo | 
-                     Where-Object { 
-                         $_.DriverDate -and [Management.ManagementDateTimeConverter]::ToDateTime($_.DriverDate) -gt $sevenDaysAgo 
-                     } | Sort-Object { [Management.ManagementDateTimeConverter]::ToDateTime($_.DriverDate) } -Descending
-
-    Escribir-Centrado "Controladores instalados en los últimos 7 días:" -ColorDeFondo "Yellow"
-    if ($recentDrivers) {
-        foreach ($driver in $recentDrivers) {
-            $info = @(
-                "Dispositivo: $($driver.DeviceName)",
-                "Fabricante: $($driver.Manufacturer)",
-                "Versión: $($driver.DriverVersion)",
-                "Fecha de instalación: $([Management.ManagementDateTimeConverter]::ToDateTime($driver.DriverDate).ToString('dd/MM/yyyy'))"
-            )
-            foreach ($line in $info) {
-                Escribir-Centrado $line
-            }
-            Escribir-Centrado ""
-        }
-    } else {
-        Escribir-Centrado "No se encontraron controladores instalados en los últimos 7 días."
-    }
-} #>
-
 function Consultar-Controladores {
     param(
         [string]$NombreEquipo = $env:COMPUTERNAME
@@ -1042,7 +920,7 @@ function Consultar-SoftwareInstalado {
                 $softwareOrdenado = $software | Sort-Object Name
             }
             catch {
-                Escribir-Centrado "Error al obtener información del software en $NombreEquipo $_" -ColorDeTexto "Rojo"
+                Escribir-Centrado "Error al obtener información del software en $NombreEquipo: $_" -ColorDeTexto "Rojo"
                 return
             }
         }
