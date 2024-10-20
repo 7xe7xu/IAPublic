@@ -1,50 +1,193 @@
-﻿function Mostrar-BannerBit {
-    Clear-Host
-    Write-Host
-    Write-Host
-	Write-Host
-    Write-Host
-	Write-Host "				       ██████╗ ██╗████████╗██╗      ██████╗  ██████╗██╗  ██╗███████╗██████╗ " -ForegroundColor DarkRed
-	Write-Host "				       ██╔══██╗██║╚══██╔══╝██║     ██╔═══██╗██╔════╝██║ ██╔╝██╔════╝██╔══██╗" -ForegroundColor DarkRed
-	Write-Host "				       ██████╔╝██║   ██║   ██║     ██║   ██║██║     █████╔╝ █████╗  ██████╔╝" -ForegroundColor Red
-	Write-Host "				       ██╔══██╗██║   ██║   ██║     ██║   ██║██║     ██╔═██╗ ██╔══╝  ██╔══██╗" -ForegroundColor Red
-	Write-Host "				       ██████╔╝██║   ██║   ███████╗╚██████╔╝╚██████╗██║  ██╗███████╗██║  ██║" -ForegroundColor Red
-	Write-Host "				       ╚═════╝ ╚═╝   ╚═╝   ╚══════╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝" -ForegroundColor White
-    Write-Host
+﻿function Escribir-Centrado {
+    param(
+        [string]$Texto,
+        [string]$ColorDeFondo = $host.UI.RawUI.ForegroundColor,
+        [string]$ColorDeFondoFondo = $host.UI.RawUI.BackgroundColor,
+        [int]$Desplazamiento = 0,  # Número de espacios para desplazar el texto
+        [switch]$NoNewline
+    )
+
+    $colores = @{
+        "Amarillo" = "Yellow"
+        "Azul" = "Blue"
+        "Rojo" = "Red"
+        "Verde" = "Green"
+        "Cyan" = "Cyan"
+        "Magenta" = "Magenta"
+        "Blanco" = "White"
+        "Negro" = "Black"
+        "Gris" = "Gray"
+        "GrisOscuro" = "DarkGray"
+        "AzulOscuro" = "DarkBlue"
+        "VerdeOscuro" = "DarkGreen"
+        "CyanOscuro" = "DarkCyan"
+        "RojoOscuro" = "DarkRed"
+        "MagentaOscuro" = "DarkMagenta"
+        "AmarilloOscuro" = "DarkYellow"
+    }
+
+    $ColorDeFondo = $colores[$ColorDeFondo] ?? $ColorDeFondo
+    $ColorDeFondoFondo = $colores[$ColorDeFondoFondo] ?? $ColorDeFondoFondo
+
+    $anchoConsola = $Host.UI.RawUI.WindowSize.Width
+    $longitudTexto = $Texto.Length
+    $rellenoIzquierdo = [math]::Max(0, [math]::Floor(($anchoConsola - $longitudTexto) / 2)) + $Desplazamiento
+    $lineaCentrada = (" " * $rellenoIzquierdo) + $Texto
+
+    if ($NoNewline) {
+        Write-Host $lineaCentrada -ForegroundColor $ColorDeFondo -BackgroundColor $ColorDeFondoFondo -NoNewline
+    } else {
+        Write-Host $lineaCentrada -ForegroundColor $ColorDeFondo -BackgroundColor $ColorDeFondoFondo
+    }
+}
+
+function Mostrar-BannerBit {
+    param (
+        [switch]$Continuo
+    )
+
+    function Dibujar-Banner {
+        $consoleWidth = $Host.UI.RawUI.WindowSize.Width
+
+        # Banner ASCII
+        $banner = @(
+            "██████╗ ██╗████████╗██╗      ██████╗  ██████╗██╗  ██╗███████╗██████╗ "
+            "██╔══██╗██║╚══██╔══╝██║     ██╔═══██╗██╔════╝██║ ██╔╝██╔════╝██╔══██╗"
+            "██████╔╝██║   ██║   ██║     ██║   ██║██║     █████╔╝ █████╗  ██████╔╝"
+            "██╔══██╗██║   ██║   ██║     ██║   ██║██║     ██╔═██╗ ██╔══╝  ██╔══██╗"
+            "██████╔╝██║   ██║   ███████╗╚██████╔╝╚██████╗██║  ██╗███████╗██║  ██║"
+            "╚═════╝ ╚═╝   ╚═╝   ╚══════╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝"
+        )
+
+        $maxWidth = ($banner | Measure-Object -Property Length -Maximum).Maximum
+        $leftPadding = [math]::Max(0, [math]::Floor(($consoleWidth - $maxWidth) / 2))
+
+        Clear-Host
+        Write-Host ""
+		Write-Host ""
+		Write-Host ""
+        $colors = @('DarkRed', 'DarkRed', 'Red', 'Red', 'Red', 'White')
+
+        for ($i = 0; $i -lt $banner.Length; $i++) {
+            $centeredLine = (" " * $leftPadding) + $banner[$i]
+            Write-Host $centeredLine -ForegroundColor $colors[$i]
+        }
+
+        Write-Host "`n"  # 1 línea en blanco después del banner
+        if ($Continuo) {
+            Write-Host "Presiona Ctrl+C para salir" -ForegroundColor Yellow
+        }
+    }
+
+    if ($Continuo) {
+        try {
+            $lastWidth = 0
+            while ($true) {
+                $currentWidth = $Host.UI.RawUI.WindowSize.Width
+                if ($currentWidth -ne $lastWidth) {
+                    Dibujar-Banner
+                    $lastWidth = $currentWidth
+                }
+                Start-Sleep -Milliseconds 100
+            }
+        }
+        finally {
+            Clear-Host
+        }
+    } else {
+        Dibujar-Banner
+    }
 }
 
 function Show-Menu {
-    $computerName = $env:COMPUTERNAME
-    $host.UI.RawUI.BackgroundColor = "Black"
-	Mostrar-BannerBit
-	Write-Host "			 			  =============================================="
-    Write-Host "			   			       Información y opciones de BitLocker" -ForegroundColor Yellow
-    Write-Host "			 			  =============================================="
-	Write-Host ""
-    Write-Host "						    1. Ver estado de Bitlocker"
-    Write-Host "						    2. Agregar protectores de Bitlocker"
-	Write-Host "						    3. Eliminar protectores de Bitlocker"
-    Write-Host "						    4. Activar Bitlocker"
-    Write-Host "						    5. Desactivar Bitlocker"
-    Write-Host "						    6. Reanudar cifrado/descifrado de Bitlocker"
-    Write-Host "						    7. Ver clave de Bitlocker"
-    Write-Host "						    0. Salir"
-	Write-Host ""
-    Write-Host "			 			  ===============================================" 
-	Write-Host
-    $host.UI.RawUI.ForegroundColor = "White"    # Restablecer el color del texto para que sea más fácil leer otros mensajes después del menú
+    param(
+        [Parameter(Mandatory=$false)]
+        [string]$NombreEquipo = $env:COMPUTERNAME,
+        [switch]$Continuo
+    )
+
+    function Dibujar-Menu {
+        $consoleWidth = $Host.UI.RawUI.WindowSize.Width
+
+        $menuItems = @(
+			
+			"======================================",
+			"",
+            "Información de BitLocker en $NombreEquipo",
+            "",
+            "======================================",
+			"",
+            " 1. Ver estado de Bitlocker",
+            " 2. Agregar protectores Bitlocker",
+            " 3. Eliminar protectores Bitlocker",
+            " 4. Activar Bitlocker",
+            " 5. Desactivar Bitlocker",
+            " 6. Reanudar cifrado/descifrado",
+            " 7. Ver clave de Bitlocker",
+            " 0. Salir",
+            "",
+            "======================================"
+        )
+
+        $maxWidth = ($menuItems | Measure-Object -Property Length -Maximum).Maximum
+        $leftPadding = [math]::Max(0, [math]::Floor(($consoleWidth - $maxWidth) / 2))
+
+        Clear-Host
+        $host.UI.RawUI.BackgroundColor = "Black"
+        Mostrar-BannerBit
+
+        foreach ($item in $menuItems) {
+            $centeredLine = (" " * $leftPadding) + $item
+            if ($item -match "Información de BitLocker en") {
+                Write-Host $centeredLine -ForegroundColor Yellow
+            } elseif ($item -match "^[0-9]+\.") {
+                Write-Host $centeredLine
+            } elseif ($item -match "={3,}") {
+                Write-Host $centeredLine
+            } else {
+                Write-Host $centeredLine
+            }
+        }
+
+        if ($Continuo) {
+            Escribir-Centrado "`nPresiona Ctrl+C para salir"
+        }
+
+        $host.UI.RawUI.ForegroundColor = "White"
+    }
+
+    if ($Continuo) {
+        try {
+            $lastWidth = 0
+            while ($true) {
+                $currentWidth = $Host.UI.RawUI.WindowSize.Width
+                if ($currentWidth -ne $lastWidth) {
+                    Dibujar-Menu
+                    $lastWidth = $currentWidth
+                }
+                Start-Sleep -Milliseconds 100
+            }
+        }
+        finally {
+            Clear-Host
+        }
+    } else {
+        Dibujar-Menu
+    }
 }
 
 function Bitlocker-Status {
-    Write-Host ""
-    $equipo = Read-Host "			 			  Nombre del equipo [este]"
-    $unidades = Read-Host "			 			  Unidades a verificar el estado de BitLocker (C:,D:,E:...) [C:]"
-    Write-Host ""
+    Escribir-Centrado ""
+    Escribir-Centrado "Nombre del equipo [este]: " -NoNewline
+    $equipo = Read-Host
+    Escribir-Centrado "Unidades a verificar el estado de BitLocker (C:,D:,E:...) [C:]: " -NoNewline
+    $unidades = Read-Host
+    Escribir-Centrado ""
     Mostrar-BannerBit
-    Write-Host "			 			  ==============================================="
-    Write-Host "			 			                 Estado de BitLocker" -ForegroundColor Yellow 
-    Write-Host "			 			  ==============================================="
-    Write-Host
+    Escribir-Centrado "===============================================" -ColorDeTexto "Red"
+    Escribir-Centrado "Estado de BitLocker" -ColorDeTexto "Red"
+    Escribir-Centrado "===============================================" -ColorDeTexto "Red"
+    Escribir-Centrado ""
 
     # Si no se especifican unidades, usar C: por defecto
     if ([string]::IsNullOrWhiteSpace($unidades)) {
@@ -57,25 +200,32 @@ function Bitlocker-Status {
     foreach ($unidad in $unidadesArray) {
         # Verificar si la unidad tiene el formato correcto
         if ($unidad -notmatch '^[A-Z]:$') {
-            Write-Host "			 			  Formato incorrecto para la unidad $unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ForegroundColor Red
+            Escribir-Centrado "Formato incorrecto para la unidad $unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ColorDeTexto "Red"
             continue
         }
 
-        Write-Host "			 			  Estado de BitLocker para la unidad $unidad" -ForegroundColor Cyan
+        Escribir-Centrado "Estado de BitLocker para la unidad $unidad" -ColorDeTexto "Cyan"
+		Escribir-Centrado ""
+		
+		# Capturar la salida del comando manage-bde para cada unidad
+		$output = manage-bde -status $unidad -cn $equipo
 
-        # Capturar la salida del comando manage-bde para cada unidad
-        $output = manage-bde -status $unidad -cn $equipo
+		# Encontrar la longitud de la línea más larga en toda la salida
+		$maxLength = ($output | Measure-Object -Property Length -Maximum).Maximum
 
-        # Procesar y mostrar cada línea con el espaciado deseado
-        $output | ForEach-Object {
-            Write-Host "			 			  $_"
-        }
+		# Calcular el desplazamiento para alinear a la izquierda
+		$consoleWidth = $Host.UI.RawUI.WindowSize.Width
+		$leftPadding = [Math]::Max(0, ($consoleWidth - $maxLength) / 2)
 
-        Write-Host
+		# Procesar y mostrar cada línea con el espaciado deseado
+		$output | ForEach-Object {
+			$paddedLine = $_.TrimStart().PadRight($maxLength)
+			Escribir-Centrado $paddedLine -Desplazamiento $leftPadding
+		}
+
+		Escribir-Centrado ""
     }
 
-    Write-Host
-    Read-Host "			 			  Presiona Enter para volver al menú"
 }
 
 function Add-Protectors {
@@ -333,8 +483,10 @@ function View-BitlockerKey {
 function Menu-Bitlocker {
     do {
         Show-Menu
-        Write-Host
-        $choice = Read-Host "						  Selecciona una opción"
+        Escribir-Centrado ""
+        Escribir-Centrado "Selecciona una opción: " -NoNewline
+        $choice = Read-Host
+
         switch ($choice) {
             "1" { Bitlocker-Status }
             "2" { Add-Protectors }
@@ -344,17 +496,20 @@ function Menu-Bitlocker {
             "6" { Bitlocker-Resume }
             "7" { View-BitlockerKey }
             "0" { 
-                Write-Host "`n						  Volviendo al menú principal..." -ForegroundColor Green 
-                Write-Host ""
-                Write-Host ""
+                Escribir-Centrado ""
+                Escribir-Centrado "Volviendo al menú principal..." -ColorDeFondo "Verde"
+                Escribir-Centrado ""
+                Escribir-Centrado ""
                 return 
             }
-            default { Write-Host "`n						  Opción incorrecta." -ForegroundColor Red }
+            default { Escribir-Centrado "Opción incorrecta." -ColorDeFondo "Rojo" }
         }
         if ($choice -ne '0') {
-            Write-Host "`n						  Presione cualquier tecla para continuar..."
-            [void][System.Console]::ReadKey()
+            Escribir-Centrado ""
+            Escribir-Centrado "Presione cualquier tecla para continuar..."
+            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
         }
     } while ($true)
 }
+
 Menu-Bitlocker
