@@ -601,7 +601,7 @@ function Consultar-Actualizaciones {
         }
     } catch {
         $errorMensaje = "Error al obtener información de actualizaciones: $_"
-        Escribir-Centrado $errorMensaje -ColorDeTexto "Red"
+        Escribir-Centrado $errorMensaje -ColorDeFondo "Red"
         $Global:InfoActualizacionesHTML += "<p style='color: red;'>$errorMensaje</p>"
     }
 
@@ -689,9 +689,9 @@ function Consultar-EstadoServicios {
         $services = Get-WmiObject Win32_Service -ComputerName $NombreEquipo
 
         # Definir longitudes fijas para las columnas
-        $maxDisplayNameLength = 43  # Ancho fijo para el nombre del servicio
-        $maxNameLength = 23         # Ancho fijo para el nombre corto
-        $maxStatusLength = 15       # Ancho fijo para el estado
+        $maxDisplayNameLength = 42  # Ancho fijo para el nombre del servicio
+        $maxNameLength = 22         # Ancho fijo para el nombre corto
+        $maxStatusLength = 12       # Ancho fijo para el estado
 
         $headerFormat = "{0,-$maxDisplayNameLength} {1,-$maxNameLength} {2,-$maxStatusLength}"
         $header = $headerFormat -f "Nombre del Servicio", "Nombre Corto", "Estado"
@@ -805,7 +805,7 @@ function Consultar-InfoUsuarios {
         }
     } catch {
         $errorMensaje = "Error al obtener información de usuarios: $_"
-        Escribir-Centrado $errorMensaje -ColorDeTexto "Rojo"
+        Escribir-Centrado $errorMensaje -ColorDeFondo "Rojo"
         $Global:InfoUsuariosHTML += "<p style='color: red;'>$errorMensaje</p>"
     }
 
@@ -848,7 +848,7 @@ function Consultar-Políticas {
     }
     catch {
         $errorMensaje = "Error al obtener información de políticas: $_"
-        Escribir-Centrado $errorMensaje -ColorDeTexto "Rojo"
+        Escribir-Centrado $errorMensaje -ColorDeFondo "Rojo"
         $Global:InfoPoliticasHTML += "<p style='color: red;'>$errorMensaje</p>"
     }
 
@@ -910,7 +910,7 @@ function Consultar-SoftwareInstalado {
         $fabricantes = $software | Group-Object -Property Vendor
     }
     catch {
-        Escribir-Centrado "Error al obtener información del software en $NombreEquipo': $_" -ColorDeTexto "Rojo"
+        Escribir-Centrado "Error al obtener información del software en $NombreEquipo': $_" -ColorDeFondo "Rojo"
         return
     }
 
@@ -939,7 +939,7 @@ function Consultar-SoftwareInstalado {
         Escribir-Centrado ""
 
         foreach ($fabricante in $fabricantes) {
-            Escribir-Centrado "Fabricante: $($fabricante.Name)" -ColorDeTexto "Verde"
+            Escribir-Centrado "Fabricante: $($fabricante.Name)" -ColorDeFondo "Verde"
             Escribir-Centrado "Número de programas: $($fabricante.Count)"
             Escribir-Centrado "Programas:"
             foreach ($prog in $fabricante.Group) {
@@ -1057,7 +1057,7 @@ function Consultar-Energia {
             $Global:InfoEnergiaHTML += "El servicio de energía está en ejecución.<br>"
         }
     } catch {
-        Escribir-Centrado "Error al manipular el servicio de energía: $_" -ColorDeTexto "Rojo"
+        Escribir-Centrado "Error al manipular el servicio de energía: $_" -ColorDeFondo "Rojo"
         $Global:InfoEnergiaHTML += "Error al manipular el servicio de energía: $_<br>"
     }
     
@@ -1073,7 +1073,7 @@ function Consultar-Energia {
             $Global:InfoEnergiaHTML += "$plan<br>"
         }
     } catch {
-        Escribir-Centrado "Error al obtener la lista de planes de energía: $_" -ColorDeTexto "Rojo"
+        Escribir-Centrado "Error al obtener la lista de planes de energía: $_" -ColorDeFondo "Rojo"
         $Global:InfoEnergiaHTML += "Error al obtener la lista de planes de energía: $_<br>"
     }
     
@@ -1095,7 +1095,7 @@ function Consultar-Energia {
             $Global:InfoEnergiaHTML += "No se encontró información sobre la suspensión.<br>"
         }
     } catch {
-        Escribir-Centrado "Error al obtener la configuración de suspensión: $_" -ColorDeTexto "Rojo"
+        Escribir-Centrado "Error al obtener la configuración de suspensión: $_" -ColorDeFondo "Rojo"
         $Global:InfoEnergiaHTML += "Error al obtener la configuración de suspensión: $_<br>"
     }
 
@@ -1149,67 +1149,55 @@ function Consultar-Seguridad {
 
 function Exportar-InfoSistema {
     param(
-        [Parameter(Mandatory=$false)]
-        [ValidateNotNullOrEmpty()]
         [string]$NombreEquipo = $env:COMPUTERNAME
     )
 
-    # Validar que el equipo sea accesible
-    if (-not (Test-Connection -ComputerName $NombreEquipo -Count 1 -Quiet)) {
-        Write-Error "No se puede conectar al equipo $NombreEquipo"
-        return
-    }
-
     Mostrar-BannerInf
     Escribir-Centrado "==============================" -ColorDeFondo "Cyan"
-    Escribir-Centrado "Exportar informe de $NombreEquipo" -ColorDeFondo "Cyan"
+    Escribir-Centrado "Exportar informe de $NombreEquipo " -ColorDeFondo "Cyan"
     Escribir-Centrado "==============================" -ColorDeFondo "Cyan"
-    Escribir-Centrado ""
+    Escribir-Centrado
 
-    # Validación de la ruta de salida
-    do {
-        $outputPath = Read-Host 'Ruta para guardar el informe HTML, p. ej. C:\Temp [Escritorio]'
-        if ([string]::IsNullOrWhiteSpace($outputPath)) {
-            $outputPath = [Environment]::GetFolderPath("Desktop")
-        }
-        if (-not (Test-Path $outputPath -IsValid)) {
-            Write-Warning "La ruta especificada no es válida. Por favor, intente de nuevo."
-        }
-    } while (-not (Test-Path $outputPath -IsValid))
+    # Solicitar la ruta de destino
+	do {
+		Escribir-Centrado "Ruta para guardar el informe HTML, p. ej. C:\Temp [Escritorio]: " -NoNewline
+		$outputPath = Read-Host
+		if ([string]::IsNullOrWhiteSpace($outputPath)) {
+			$outputPath = [Environment]::GetFolderPath("Desktop")
+		}
+		if (-not (Test-Path $outputPath -IsValid)) {
+			Escribir-Centrado "La ruta especificada no es válida. Por favor, intente de nuevo." -ColorDeTexto "Amarillo"
+		}
+	} while (-not (Test-Path $outputPath -IsValid))
 
-    # Definir el nombre del archivo por defecto
-    $defaultFileName = "info_$NombreEquipo.html"
+	# Definir el nombre del archivo por defecto
+	$defaultFileName = "Inf0_$NombreEquipo.html"
 
-    # Validación del nombre del archivo
-    do {
-        $outputFile = Read-Host "Introduce el nombre del archivo sin extensión [$defaultFileName]"
-        if ([string]::IsNullOrWhiteSpace($outputFile)) {
-            $outputFile = $defaultFileName
-        }
-        if (-not ($outputFile -match '^[\w\-. ]+$')) {
-            Write-Warning "El nombre del archivo contiene caracteres no válidos. Por favor, intente de nuevo."
-        }
-    } while (-not ($outputFile -match '^[\w\-. ]+$'))
+	# Solicitar nombre del archivo para exportar, usando el nombre por defecto si se deja en blanco
+	Escribir-Centrado "Introduce el nombre del archivo sin extensión [$defaultFileName]: " -NoNewline
+	$outputFile = Read-Host
+	if ([string]::IsNullOrWhiteSpace($outputFile)) {
+		$outputFile = $defaultFileName
+	}
+	elseif (-not ($outputFile.EndsWith('.html', [StringComparison]::OrdinalIgnoreCase))) {
+		$outputFile += '.html'
+	}
 
-    # Asegurar que el archivo tenga extensión .html
-    if (-not ($outputFile.EndsWith('.html', [StringComparison]::OrdinalIgnoreCase))) {
-        $outputFile += '.html'
-    }
+	# Combinar la ruta y el nombre del archivo
+	$fullPath = Join-Path -Path $outputPath -ChildPath $outputFile
 
-    # Combinar la ruta y el nombre del archivo
-    $fullPath = Join-Path -Path $outputPath -ChildPath $outputFile
-
-    # Comprobar si el archivo ya existe
-    if (Test-Path $fullPath) {
-        $confirmacion = Read-Host "El archivo $fullPath ya existe. ¿Deseas sobrescribirlo? (S/N) [S]"
-        if ([string]::IsNullOrWhiteSpace($confirmacion)) {
-            $confirmacion = "S"
-        }
-        if ($confirmacion.ToUpper() -ne 'S') {
-            Escribir-Centrado "Operación cancelada por el usuario." -ColorDeTexto "Amarillo"
-            return
-        }
-    }
+	# Comprobar si el archivo ya existe
+	if (Test-Path $fullPath) {
+		Escribir-Centrado "El archivo $fullPath ya existe. ¿Deseas sobrescribirlo? (S/N) [S]: " -NoNewline
+		$confirmacion = Read-Host
+		if ([string]::IsNullOrWhiteSpace($confirmacion)) {
+			$confirmacion = "S"
+		}
+		if ($confirmacion.ToUpper() -ne 'S') {
+			Escribir-Centrado "Operación cancelada por el usuario." -ColorDeTexto "Amarillo"
+			return
+		}
+	}
 
     # Obtener la fecha y hora actual
     $currentCulture = [System.Threading.Thread]::CurrentThread.CurrentCulture
@@ -1220,11 +1208,11 @@ function Exportar-InfoSistema {
 
     # Función para formatear el contenido
     function Format-Content {
-        param ([string]$content)
-        $lines = $content -split "`r?`n" | ForEach-Object { $_.Trim() }
-        $formattedContent = ($lines | Where-Object { $_ -match '\S' }) -join "<br>"
-        return $formattedContent
-    }
+		param ([string]$content)
+		$lines = $content -split "`r?`n" | ForEach-Object { $_.TrimEnd() }  # Cambiado de Trim() a TrimEnd()
+		$formattedContent = ($lines | Where-Object { $_ -match '\S' }) -join "<br>"
+		return $formattedContent
+	}
 
     # Ejecutar todas las funciones de consulta
 	Consultar-ResumenSistema -NombreEquipo $NombreEquipo
@@ -1242,34 +1230,34 @@ function Exportar-InfoSistema {
 	Consultar-InfoUsuarios -NombreEquipo $NombreEquipo
 	Consultar-Políticas -NombreEquipo $NombreEquipo
 	Consultar-Controladores -NombreEquipo $NombreEquipo
-	Consultar-SoftwareInstalado -NombreEquipo $NombreEquipo
+	Consultar-SoftwareInstalado -NombreEquipo $NombreEquipo -PorFabricante
 	Consultar-Arranque -NombreEquipo $NombreEquipo
 	Consultar-Energia -NombreEquipo $NombreEquipo
 	Consultar-Seguridad -NombreEquipo $NombreEquipo
-
-	# Crear una estructura de datos para almacenar la información
-	$infoSecciones = @(
-		@{Titulo="Resumen del sistema"; Contenido=(Format-Content $Global:ResumenSistemaHTML)},
-		@{Titulo="Placa base"; Contenido=(Format-Content $Global:InfoPlacaBaseHTML)},
-		@{Titulo="CPU"; Contenido=(Format-Content $Global:InfoCPUHTML)},
-		@{Titulo="Memoria RAM"; Contenido=(Format-Content $Global:InfoMemoriaHTML)},
-		@{Titulo="Discos"; Contenido=(Format-Content $Global:InfoDiscosHTML)},
-		@{Titulo="Adaptadores de red"; Contenido=(Format-Content $Global:InfoRedHTML)},
-		@{Titulo="GPU"; Contenido=(Format-Content $Global:InfoGPUHTML)},
-		@{Titulo="Dispositivos USB registrados en el sistema"; Contenido=(Format-Content $Global:InfoUSBHTML)},
-		@{Titulo="Baterías"; Contenido=(Format-Content $Global:InfoBateriaHTML)},
-		@{Titulo="Actualizaciones"; Contenido=(Format-Content $Global:InfoActualizacionesHTML)},
-		@{Titulo="Sistema operativo"; Contenido=(Format-Content $Global:InfoSOHTML)},
-        @{Titulo="Servicios relevantes"; Contenido=(Format-Content (Consultar-EstadoServicios -NombreEquipo))},
-        @{Titulo="Usuarios"; Contenido=(Format-Content (Consultar-Usuarios -NombreEquipo))},
-        @{Titulo="Políticas y grupos"; Contenido=(Format-Content (Consultar-PoliticasGrupos -NombreEquipo))},
-        @{Titulo="Controladores"; Contenido=(Format-Content (Consultar-Controladores -NombreEquipo))},
-        @{Titulo="Software instalado"; Contenido=(Format-Content (Consultar-SoftwareInstalado -PorFabricante -NombreEquipo $NombreEquipo))}
-        @{Titulo="Arranque"; Contenido=(Format-Content (Consultar-Arranque -NombreEquipo))},
-        @{Titulo="Energía"; Contenido=(Format-Content (Consultar-Energia -NombreEquipo))},
-        @{Titulo="Seguridad"; Contenido=(Format-Content (Consultar-Seguridad -NombreEquipo))}
-   )
 	
+    # Crear una estructura de datos para almacenar la información
+    $infoSecciones = @(
+        @{Titulo="Resumen del sistema"; Contenido=(Format-Content $Global:ResumenSistemaHTML)},
+        @{Titulo="Placa base"; Contenido=(Format-Content $Global:InfoPlacaBaseHTML)},
+        @{Titulo="CPU"; Contenido=(Format-Content $Global:InfoCPUHTML)},
+        @{Titulo="Memoria RAM"; Contenido=(Format-Content $Global:InfoMemoriaHTML)},
+        @{Titulo="Discos"; Contenido=(Format-Content $Global:InfoDiscosHTML)},
+        @{Titulo="Adaptadores de red"; Contenido=(Format-Content $Global:InfoRedHTML)},
+        @{Titulo="GPU"; Contenido=(Format-Content $Global:InfoGPUHTML)},
+        @{Titulo="Dispositivos USB registrados en el sistema"; Contenido=(Format-Content $Global:InfoUSBHTML)},
+        @{Titulo="Baterías"; Contenido=(Format-Content $Global:InfoBateriaHTML)},
+        @{Titulo="Actualizaciones"; Contenido=(Format-Content $Global:InfoActualizacionesHTML)},
+        @{Titulo="Sistema operativo"; Contenido=(Format-Content $Global:InfoSOHTML)},
+        @{Titulo="Servicios relevantes"; Contenido=(Format-Content $Global:InfoServiciosHTML)},
+        @{Titulo="Usuarios"; Contenido=(Format-Content $Global:InfoUsuariosHTML)},
+        @{Titulo="Políticas y grupos"; Contenido=(Format-Content $Global:InfoPoliticasHTML)},
+        @{Titulo="Controladores"; Contenido=(Format-Content $Global:InfoControladoresHTML)},
+        @{Titulo="Software instalado ordenado por fabricante"; Contenido=(Format-Content (Consultar-SoftwareInstalado -NombreEquipo $NombreEquipo -PorFabricante))},
+        @{Titulo="Arranque"; Contenido=(Format-Content $Global:InfoArranqueHTML)},
+        @{Titulo="Energía"; Contenido=(Format-Content $Global:InfoEnergiaHTML)},
+        @{Titulo="Seguridad"; Contenido=(Format-Content $Global:InfoSeguridadHTML)}
+    )
+
     # Función para generar el contenido HTML
     function Get-HTMLContent {
         $htmlContent = @"
@@ -1342,108 +1330,73 @@ function Exportar-InfoSistema {
             margin-top: 10px; 
             padding-top: 5px; 
             border-top: 1px solid #87CEFA; 
-            font-size: 0.7em; 
-            text-align: center; 
-            color: #ff9500;
-        }
-        .date-time { 
-            font-family: 'Consolas', monospace; 
-            text-align: right; 
-            color: #ffffff;
+            font-size: 12px;
+            text-align: center;
+            color: #87CEFA;
         }
     </style>
-    <script>
-    function copyToClipboard(id) {
-        var element = document.getElementById(id);
-        var text = element.innerText;
-        
-        // Eliminar espacios y saltos de línea innecesarios
-        text = text.trim().replace(/(\n\s*){2,}/g, '\n');
-
-        navigator.clipboard.writeText(text).then(function() {
-            // Cambiar el texto del botón temporalmente
-            var button = element.nextElementSibling;
-            var originalText = button.textContent;
-            button.textContent = 'Copiado';
-            setTimeout(function() {
-                button.textContent = originalText;
-            }, 2000);
-        }).catch(function(err) {
-            console.error('Error al copiar: ', err);
-            alert('Error al copiar al portapapeles. Por favor, inténtalo de nuevo.');
-        });
-    }
-    </script>
 </head>
 <body>
-<div class="ascii-banner">
+	<div class="ascii-banner">
 ██╗███╗   ██╗███████╗ ██████╗         ███████╗ ██████╗ ██╗   ██╗██╗██████╗  ██████╗ 
 ██║████╗  ██║██╔════╝██╔═══██╗        ██╔════╝██╔═══██╗██║   ██║██║██╔══██╗██╔═████╗
 ██║██╔██╗ ██║█████╗  ██║   ██║        █████╗  ██║   ██║██║   ██║██║██████╔╝██║██╔██║
 ██║██║╚██╗██║██╔══╝  ██║   ██║        ██╔══╝  ██║▄▄ ██║██║   ██║██║██╔═══╝ ████╔╝██║
 ██║██║ ╚████║██║     ╚██████╔╝███████╗███████╗╚██████╔╝╚██████╔╝██║██║     ╚██████╔╝
 ╚═╝╚═╝  ╚═══╝╚═╝      ╚═════╝ ╚══════╝╚══════╝ ╚══▀▀═╝  ╚═════╝ ╚═╝╚═╝      ╚═════╝ 
-</div>
+	</div>
     <div class="computer-name">$NombreEquipo</div>
-    <p class='date-time'> $currentDate</p>
-    <p class='date-time'> $currentTime</p>
+    <p style="text-align: right;"> $currentDate</p>
+    <p style="text-align: right;"> $currentTime</p>
 "@
 
-        $sectionId = 0
-        foreach ($seccion in $infoSecciones) {
-            $sectionId++
-            $contenidoFormateado = $seccion.Contenido -replace "`r`n", "<br>" -replace "`n", "<br>"
-            $htmlContent += @"
+    foreach ($seccion in $infoSecciones) {
+        $htmlContent += @"
     <h2>$($seccion.Titulo)</h2>
     <div class="content">
-        <div id="section$sectionId">$contenidoFormateado</div>
-        <button class="copy-btn" onclick="copyToClipboard('section$sectionId')">Copiar</button>
+        <button class="copy-btn" onclick="copyToClipboard(this)">Copiar</button>
+        <pre>$($seccion.Contenido)</pre>
     </div>
 "@
-        }
+    }
 
-        $htmlContent += @"
+    $htmlContent += @"
     <footer>
-        <p>Informe generado con script_zer0 | sergiomv_2024</p>
+        <p>Informe generado desde Inf0_Equipo.ps1 | sergiomv 2024</p>
     </footer>
+    <script>
+        function copyToClipboard(button) {
+			var content = button.nextElementSibling;
+			var text = content.innerText;
+			
+			// Eliminar líneas vacías al principio y al final
+			text = text.replace(/^\s+|\s+$/g, '');
+			
+			navigator.clipboard.writeText(text).then(function() {
+				button.textContent = 'Copiado!';
+				setTimeout(function() {
+					button.textContent = 'Copiar';
+				}, 2000);
+			}, function(err) {
+				console.error('Error al copiar', err);
+			});
+		}
+    </script>
 </body>
 </html>
 "@
 
-        return $htmlContent
-    }
+    return $htmlContent
+}
+    # Generar el contenido HTML
+    $htmlContent = Get-HTMLContent
 
-# Exportar la información en formato HTML
-   try {
-       Get-HTMLContent | Out-File -FilePath $fullPath -Encoding UTF8
+    # Guardar el contenido HTML en el archivo
+    $htmlContent | Out-File -FilePath $fullPath -Encoding UTF8
 
-       # Limpiar la pantalla y mostrar el banner
-       Clear-Host
-       Mostrar-BannerInf
-
-       # Mostrar el mensaje de éxito
-       Escribir-Centrado "==============================" -ColorDeFondo "Cyan"
-       Escribir-Centrado "Informe exportado con éxito" -ColorDeFondo "Cyan"
-       Escribir-Centrado "==============================" -ColorDeFondo "Cyan"
-       Escribir-Centrado ""
-       Escribir-Centrado "Información exportada a:  $fullPath" -ColorDeTexto "Verde"
-   }
-   catch {
-       # En caso de error, también limpiar la pantalla y mostrar el banner
-       Clear-Host
-       Mostrar-BannerInf
-
-       Escribir-Centrado "==============================" -ColorDeFondo "Rojo"
-       Escribir-Centrado "Error al exportar el informe" -ColorDeFondo "Rojo"
-       Escribir-Centrado "==============================" -ColorDeFondo "Rojo"
-       Escribir-Centrado ""
-       Escribir-Centrado "Error al exportar la información: $_" -ColorDeTexto "Rojo"
-   }
-
-   # Esperar a que el usuario presione una tecla antes de continuar
-   Escribir-Centrado ""
-   Escribir-Centrado "Presiona cualquier tecla para continuar..."
-   [void][System.Console]::ReadKey($true)
+	Clear-Host
+	Mostrar-BannerInf
+    Escribir-Centrado "Informe HTML generado y guardado en: $fullPath" -ColorDeFondo "Verde"
 }
 
 function Menu-InfoEquipo {
