@@ -1,7 +1,7 @@
-﻿# Importar los scripts originales
+﻿<# # Importar los scripts originales
 . .\Bitlocker.ps1
-. .\Info_Equipo.ps1
-. .\ToolKit.ps1
+. .\Inf0_Equipo.ps1
+. .\ToolKit.ps1 #>
 
 function Escribir-Centrado {
     param(
@@ -105,50 +105,29 @@ function Mostrar-BannerScr {
 }
 
 function Mostrar-MenuPrincipal {
-	param(
-			[Parameter(Mandatory=$false)]
-			[string]$NombreEquipo = $env:COMPUTERNAME,
-			[switch]$Continuo
-	)
+    param(
+        [Parameter(Mandatory=$false)]
+        [string]$NombreEquipo = $env:COMPUTERNAME,
+        [switch]$Continuo
+    )
 
-	function Dibujar-Menu {
-		$consoleWidth = $Host.UI.RawUI.WindowSize.Width
-
-		$menuItems = @(
-				
-			"======================================",
-			"",
-			"Menú principal - Script_Zer0",
-			"",
-			"======================================",
-			"",
-			" 1. BitLocker",
-			" 2. Info_equip0",
-			" 3. ToolKit",
-			" 0. Salir",
-			"",
-			"======================================"
-		)
-	
-        $maxWidth = ($menuItems | Measure-Object -Property Length -Maximum).Maximum
-        $leftPadding = [math]::Max(0, [math]::Floor(($consoleWidth - $maxWidth) / 2))
-
+    function Dibujar-Menu {
         Clear-Host
         $host.UI.RawUI.BackgroundColor = "Black"
-        Mostrar-BannerBit
+        Mostrar-BannerScr
 
-        foreach ($item in $menuItems) {
-            $centeredLine = (" " * $leftPadding) + $item
-            if ($item -match "Información de BitLocker en") {
-                Write-Host $centeredLine -ForegroundColor Yellow
-            } elseif ($item -match "^[0-9]+\.") {
-                Write-Host $centeredLine
-            } elseif ($item -match "={3,}") {
-                Write-Host $centeredLine
-            } else {
-                Write-Host $centeredLine
-            }
-        }
+        Escribir-Centrado "=============================="
+        Escribir-Centrado ""
+        Escribir-Centrado "Menú principal - Script_Zer0"
+        Escribir-Centrado ""
+        Escribir-Centrado "=============================="
+        Escribir-Centrado ""
+        Escribir-Centrado "1. BitLocker"
+        Escribir-Centrado "2. Inf0_Equipo"
+        Escribir-Centrado "3. ToolKit"
+        Escribir-Centrado "0. Salir"
+        Escribir-Centrado ""
+        Escribir-Centrado "=============================="
 
         if ($Continuo) {
             Escribir-Centrado "`nPresiona Ctrl+C para salir"
@@ -177,22 +156,43 @@ function Mostrar-MenuPrincipal {
     }
 }
 
-
-
 function MenuZer0 {
     do {
         Mostrar-MenuPrincipal
-        $choice = Read-Host "						  Seleccione una opción"
+        Escribir-Centrado "Seleccione una opción: " -NoNewline
+        $choice = Read-Host
         
         switch ($choice) {
-            "1" { Menu-Bitlocker }
-            "2" { Menu-InfoEquipo }
-            "3" { Menu-ToolKit }
+            "1" { $scriptName = "Bitlocker" }
+            "2" { $scriptName = "InfoEquipo" }
+            "3" { $scriptName = "ToolKit" }
             "0" { 
-                Write-Host "Saliendo de script_Zer0..."
+                Escribir-Centrado ""
+				Escribir-Centrado "Saliendo de script_Zer0..." -ColorDeFondo "Verde"
                 return 
             }
-            default { Write-Host "						  Opción incorrecta." }
+            default { 
+                Escribir-Centrado "Opción incorrecta." -ColorDeFondo "Red"
+                continue
+            }
+        }
+
+        if ($choice -ne "0") {
+            $rutaScript = Join-Path $PSScriptRoot "$scriptName.ps1"
+            if (Test-Path $rutaScript) {
+                . $rutaScript
+                $nombreFuncion = "Menu-$scriptName"
+                if (Get-Command $nombreFuncion -ErrorAction SilentlyContinue) {
+                    & $nombreFuncion
+                } else {
+                    Escribir-Centrado "No se encontró la función $nombreFuncion en el script $scriptName.ps1" -ColorDeFondo "Red"
+                }
+            } else {
+                Escribir-Centrado "No se encontró el script $rutaScript" -ColorDeFondo "Red"
+            }
+            Escribir-Centrado ""
+			Escribir-Centrado "Presione Enter para volver al menú principal" -ColorDeFondo "Verde" -NoNewline
+            Read-Host
         }
     } while ($true)
 }

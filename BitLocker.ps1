@@ -180,8 +180,14 @@ function Bitlocker-Status {
     Escribir-Centrado ""
     Escribir-Centrado "Nombre del equipo [este]: " -NoNewline
     $equipo = Read-Host
-    Escribir-Centrado "Unidades a verificar el estado de BitLocker (C:,D:,E:...) [C:]: " -NoNewline
+		if ([string]::IsNullOrWhiteSpace($equipo)) {
+		$equipo = $env:COMPUTERNAME
+	}
+    Escribir-Centrado "Ver métodos de protección de las unidades (C:,D:,E:...) [C:]: " -NoNewline
     $unidades = Read-Host
+		if ([string]::IsNullOrWhiteSpace($unidades)) {
+			$unidades = "C:"
+		}
     Escribir-Centrado ""
     Mostrar-BannerBit
     Escribir-Centrado "===============================================" -ColorDeFondo "Red"
@@ -232,19 +238,29 @@ function Bitlocker-Status {
 
         Escribir-Centrado ""
     }
+	
+	Escribir-Centrado ""
+    Escribir-Centrado "Presiona Enter para volver al menú" -NoNewline
+    Read-Host
 }
 
 function Add-Protectors {
     Escribir-Centrado ""
     Escribir-Centrado "Nombre del equipo [este]: " -NoNewline
     $equipo = Read-Host
-    Escribir-Centrado "Añadir protectores a las unidades (C:,D:,E:...) [C:]: " -NoNewline
+		if ([string]::IsNullOrWhiteSpace($equipo)) {
+		$equipo = $env:COMPUTERNAME
+	}
+    Escribir-Centrado "Ver métodos de protección de las unidades (C:,D:,E:...) [C:]: " -NoNewline
     $unidades = Read-Host
+		if ([string]::IsNullOrWhiteSpace($unidades)) {
+			$unidades = "C:"
+		}
     Escribir-Centrado ""
     Mostrar-BannerBit
-    Escribir-Centrado "===============================================" -ColorDeFondo "Yellow"
-    Escribir-Centrado "Añadir protectores BitLocker" -ColorDeFondo "Yellow"
-    Escribir-Centrado "===============================================" -ColorDeFondo "Yellow"
+    Escribir-Centrado "===============================================" -ColorDeFondo "Rojo"
+    Escribir-Centrado "Añadir protectores BitLocker" -ColorDeFondo "Rojo"
+    Escribir-Centrado "===============================================" -ColorDeFondo "Rojo"
     Escribir-Centrado ""
 
     # Si no se especifican unidades, usar C: por defecto
@@ -258,7 +274,7 @@ function Add-Protectors {
     foreach ($unidad in $unidadesArray) {
         # Validar que la unidad tenga el formato correcto
         if ($unidad -notmatch '^[A-Z]:$') {
-            Escribir-Centrado "Formato incorrecto para la unidad $unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ColorDeFondo "Red"
+            Escribir-Centrado "Formato incorrecto para la unidad $unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ColorDeFondo "Rojo"
             continue
         }
 
@@ -270,14 +286,14 @@ function Add-Protectors {
         # Encontrar la longitud de la línea más larga
         $maxLength = ($output | Measure-Object -Property Length -Maximum).Maximum
 
-        # Calcular el desplazamiento para centrar el bloque de texto
+        # Calcular el desplazamiento para alinear a la izquierda
         $consoleWidth = $Host.UI.RawUI.WindowSize.Width
         $leftPadding = [Math]::Max(0, ($consoleWidth - $maxLength) / 2)
 
         # Procesar y mostrar cada línea con el espaciado deseado
         $output | ForEach-Object {
             $paddedLine = $_.TrimStart().PadRight($maxLength)
-            Escribir-Centrado $paddedLine -Desplazamiento $leftPadding
+            Write-Host (" " * $leftPadding) $paddedLine
         }
 
         Escribir-Centrado ""
@@ -289,15 +305,23 @@ function Add-Protectors {
 }
 
 function Rmv-Protectors {
-    Write-Host ""
-    $equipo = Read-Host "			 			  Nombre del equipo [este]"
-    $unidades = Read-Host "			 			  Eliminar protectores a las unidades (C:,D:,E:...) [C:]"
-    Write-Host ""
+    Escribir-Centrado ""
+    Escribir-Centrado "Nombre del equipo [este]: " -NoNewline
+    $equipo = Read-Host
+		if ([string]::IsNullOrWhiteSpace($equipo)) {
+		$equipo = $env:COMPUTERNAME
+	}
+    Escribir-Centrado "Ver métodos de protección de las unidades (C:,D:,E:...) [C:]: " -NoNewline
+    $unidades = Read-Host
+		if ([string]::IsNullOrWhiteSpace($unidades)) {
+			$unidades = "C:"
+		}
+    Escribir-Centrado ""
     Mostrar-BannerBit
-    Write-Host "                         ==============================================="
-    Write-Host "                                 Eliminar protectores BitLocker" -ForegroundColor Yellow 
-    Write-Host "                         ==============================================="
-    Write-Host
+    Escribir-Centrado "===============================================" -ColorDeFondo "Rojo"
+    Escribir-Centrado "Eliminar protectores BitLocker" -ColorDeFondo "Rojo"
+    Escribir-Centrado "===============================================" -ColorDeFondo "Rojo"
+    Escribir-Centrado ""
 
     # Si no se especifican unidades, usar C: por defecto
     if ([string]::IsNullOrWhiteSpace($unidades)) {
@@ -310,37 +334,55 @@ function Rmv-Protectors {
     foreach ($unidad in $unidadesArray) {
         # Validar que la unidad tenga el formato correcto
         if ($unidad -notmatch '^[A-Z]:$') {
-            Write-Host "                         Formato de unidad incorrecto para $unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ForegroundColor Red
+            Escribir-Centrado "Formato de unidad incorrecto para $unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ColorDeFondo "Rojo"
             continue
         }
 
-        Write-Host "                         Eliminando protectores de la unidad $unidad" -ForegroundColor Cyan
-
+        Escribir-Centrado "Eliminando protectores de la unidad $unidad" -ColorDeFondo "Cyan"
+		Escribir-Centrado ""
+		
         # Capturar la salida del comando manage-bde
         $output = manage-bde -protectors -delete $unidad -cn $equipo
 
+        # Encontrar la longitud de la línea más larga
+        $maxLength = ($output | Measure-Object -Property Length -Maximum).Maximum
+
+        # Calcular el desplazamiento para alinear a la izquierda
+        $consoleWidth = $Host.UI.RawUI.WindowSize.Width
+        $leftPadding = [Math]::Max(0, ($consoleWidth - $maxLength) / 2)
+
         # Procesar y mostrar cada línea con el espaciado deseado
         $output | ForEach-Object {
-            Write-Host "                         $_"
+            $paddedLine = $_.TrimStart().PadRight($maxLength)
+            Write-Host (" " * $leftPadding) $paddedLine
         }
 
-        Write-Host
+        Escribir-Centrado ""
     }
 
-    Write-Host
-    Read-Host "                         Presione Enter para volver al menú"
+	Escribir-Centrado ""
+    Escribir-Centrado "Presiona Enter para volver al menú" -NoNewline
+    Read-Host
 }
 
 function Bitlocker-On {
-    Write-Host ""
-    $equipo = Read-Host "			 			  Nombre del equipo [este]"
-    $unidades = Read-Host "			 			  Activar BitLocker en las unidades (C:,D:,E:...) [C:]"
-    Write-Host ""
+    Escribir-Centrado ""
+    Escribir-Centrado "Nombre del equipo [este]: " -NoNewline
+    $equipo = Read-Host
+		if ([string]::IsNullOrWhiteSpace($equipo)) {
+		$equipo = $env:COMPUTERNAME
+	}
+    Escribir-Centrado "Ver métodos de protección de las unidades (C:,D:,E:...) [C:]: " -NoNewline
+    $unidades = Read-Host
+		if ([string]::IsNullOrWhiteSpace($unidades)) {
+			$unidades = "C:"
+		}
+    Escribir-Centrado ""
     Mostrar-BannerBit
-    Write-Host "			 			  ==============================================="
-    Write-Host "			 			          Activar BitLocker" -ForegroundColor Yellow 
-    Write-Host "			 			  ==============================================="
-    Write-Host
+    Escribir-Centrado "===============================================" -ColorDeFondo "Rojo"
+    Escribir-Centrado "Activar BitLocker" -ColorDeFondo "Rojo"
+    Escribir-Centrado "===============================================" -ColorDeFondo "Rojo"
+    Escribir-Centrado ""
 
     # Si no se especifican unidades, usar C: por defecto
     if ([string]::IsNullOrWhiteSpace($unidades)) {
@@ -353,37 +395,54 @@ function Bitlocker-On {
     foreach ($unidad in $unidadesArray) {
         # Verificar si la unidad tiene el formato correcto
         if ($unidad -notmatch '^[A-Z]:$') {
-            Write-Host "			 			  Formato incorrecto para la unidad $unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ForegroundColor Red
+            Escribir-Centrado "Formato incorrecto para la unidad $unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ColorDeFondo "Rojo"
             continue
         }
 
-        Write-Host "			 			  Activando BitLocker en la unidad $unidad" -ForegroundColor Cyan
+        Escribir-Centrado "Activando BitLocker en la unidad $unidad" -ColorDeFondo "Cyan"
 
         # Capturar la salida del comando manage-bde
         $output = manage-bde -on $unidad -cn $equipo
 
+        # Encontrar la longitud de la línea más larga
+        $maxLength = ($output | Measure-Object -Property Length -Maximum).Maximum
+
+        # Calcular el desplazamiento para alinear a la izquierda
+        $consoleWidth = $Host.UI.RawUI.WindowSize.Width
+        $leftPadding = [Math]::Max(0, ($consoleWidth - $maxLength) / 2)
+
         # Procesar y mostrar cada línea con el espaciado deseado
         $output | ForEach-Object {
-            Write-Host "			 			  $_"
+            $paddedLine = $_.TrimStart().PadRight($maxLength)
+            Write-Host (" " * $leftPadding) $paddedLine
         }
 
-        Write-Host
+        Escribir-Centrado ""
     }
 
-    Write-Host
-    Read-Host "			 			  Presiona Enter para volver al menú"
+    Escribir-Centrado ""
+    Escribir-Centrado "Presiona Enter para volver al menú" -NoNewline
+    Read-Host
 }
 
 function Bitlocker-Off {
-    Write-Host ""
-    $equipo = Read-Host "			 			  Nombre del equipo [este]"
-    $unidades = Read-Host "			 			  Desactivar BitLocker en las unidades (C:,D:,E:...) [C:]"
-    Write-Host ""
+    Escribir-Centrado ""
+    Escribir-Centrado "Nombre del equipo [este]: " -NoNewline
+    $equipo = Read-Host
+		if ([string]::IsNullOrWhiteSpace($equipo)) {
+		$equipo = $env:COMPUTERNAME
+	}
+    Escribir-Centrado "Ver métodos de protección de las unidades (C:,D:,E:...) [C:]: " -NoNewline
+    $unidades = Read-Host
+		if ([string]::IsNullOrWhiteSpace($unidades)) {
+			$unidades = "C:"
+		}
+    Escribir-Centrado ""
     Mostrar-BannerBit
-    Write-Host "			 			  ==============================================="
-    Write-Host "			 			          Desactivar BitLocker" -ForegroundColor Yellow 
-    Write-Host "			 			  ==============================================="
-    Write-Host
+    Escribir-Centrado "===============================================" -ColorDeFondo "Rojo"
+    Escribir-Centrado "Desactivar BitLocker" -ColorDeFondo "Rojo"
+    Escribir-Centrado "===============================================" -ColorDeFondo "Rojo"
+    Escribir-Centrado ""
 
     # Si no se especifican unidades, usar C: por defecto
     if ([string]::IsNullOrWhiteSpace($unidades)) {
@@ -396,74 +455,55 @@ function Bitlocker-Off {
     foreach ($unidad in $unidadesArray) {
         # Verificar si la unidad tiene el formato correcto
         if ($unidad -notmatch '^[A-Z]:$') {
-            Write-Host "			 			  Formato incorrecto para la unidad $unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ForegroundColor Red
+            Escribir-Centrado "Formato incorrecto para la unidad $unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ColorDeFondo "Rojo"
             continue
         }
 
-        Write-Host "			 			  Desactivando BitLocker en la unidad $unidad" -ForegroundColor Cyan
+        Escribir-Centrado "Desactivando BitLocker en la unidad $unidad" -ColorDeFondo "Cyan"
+		Escribir-Centrado ""
 
         # Capturar la salida del comando manage-bde
         $output = manage-bde -off $unidad -cn $equipo
 
+        # Encontrar la longitud de la línea más larga
+        $maxLength = ($output | Measure-Object -Property Length -Maximum).Maximum
+
+        # Calcular el desplazamiento para alinear a la izquierda
+        $consoleWidth = $Host.UI.RawUI.WindowSize.Width
+        $leftPadding = [Math]::Max(0, ($consoleWidth - $maxLength) / 2)
+
         # Procesar y mostrar cada línea con el espaciado deseado
         $output | ForEach-Object {
-            Write-Host "			 			  $_"
+            $paddedLine = $_.TrimStart().PadRight($maxLength)
+            Write-Host (" " * $leftPadding) $paddedLine
         }
 
-        Write-Host
+        Escribir-Centrado ""
     }
 
-    Write-Host
-    Read-Host "			 			  Presiona Enter para volver al menú"
+    Escribir-Centrado ""
+    Escribir-Centrado "Presiona Enter para volver al menú" -NoNewline
+    Read-Host
 }
 
 function Bitlocker-Resume {
-    Write-Host ""
-    $equipo = Read-Host "			 			  Nombre del equipo [este]"
-    $unidades = Read-Host "			 			  Reanudar cifrado/descifrado en las unidades (C:,D:,E:...) [C:]"
-    
-    # Si no se especifica unidad, usar C: por defecto
-    if ([string]::IsNullOrWhiteSpace($unidad)) {
-        $unidad = "C:"
-    } else {
-        $unidad = $unidad.Trim().ToUpper()
-        # Verificar si la unidad tiene el formato correcto
-        if ($unidad -notmatch '^[A-Z]:$') {
-            Write-Host "			 			  Formato incorrecto para la unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ForegroundColor Red
-            Read-Host "			 			  Presione Enter para volver al menú"
-            return
-        }
-    }
-
-    Write-Host ""
+    Escribir-Centrado ""
+    Escribir-Centrado "Nombre del equipo [este]: " -NoNewline
+    $equipo = Read-Host
+		if ([string]::IsNullOrWhiteSpace($equipo)) {
+		$equipo = $env:COMPUTERNAME
+	}
+    Escribir-Centrado "Ver métodos de protección de las unidades (C:,D:,E:...) [C:]: " -NoNewline
+    $unidades = Read-Host
+		if ([string]::IsNullOrWhiteSpace($unidades)) {
+			$unidades = "C:"
+		}
+    Escribir-Centrado ""
     Mostrar-BannerBit
-    Write-Host "			 			  ==============================================="
-    Write-Host "			 			      Reanudar cifrado/descifrado UNIDAD $unidad" -ForegroundColor Yellow 
-    Write-Host "			 			  ==============================================="
-    Write-Host
-
-    # Capturar la salida del comando manage-bde
-    $output = manage-bde -resume $unidad -cn $equipo
-
-    # Procesar y mostrar cada línea con el espaciado deseado
-    $output | ForEach-Object {
-        Write-Host "			 			  $_"
-    }
-
-    Write-Host
-    Read-Host "			 			  Presiona Enter para volver al menú"
-}
-
-function View-BitlockerKey {
-    Write-Host ""
-    $equipo = Read-Host "			 			  Nombre del equipo [este]"
-    $unidades = Read-Host "			 			  Ver métodos de protección de las unidades (C:,D:,E:...) [C:]"
-    Write-Host ""
-    Mostrar-BannerBit
-    Write-Host "			 			  ==============================================="
-    Write-Host "			 			      Métodos de protección BitLocker" -ForegroundColor Yellow 
-    Write-Host "			 			  ==============================================="
-    Write-Host
+    Escribir-Centrado "===============================================" -ColorDeFondo "Rojo"
+    Escribir-Centrado "Reanudar cifrado/descifrado BitLocker" -ColorDeFondo "Rojo"
+    Escribir-Centrado "===============================================" -ColorDeFondo "Rojo"
+    Escribir-Centrado ""
 
     # Si no se especifican unidades, usar C: por defecto
     if ([string]::IsNullOrWhiteSpace($unidades)) {
@@ -476,25 +516,96 @@ function View-BitlockerKey {
     foreach ($unidad in $unidadesArray) {
         # Verificar si la unidad tiene el formato correcto
         if ($unidad -notmatch '^[A-Z]:$') {
-            Write-Host "			 			  Formato incorrecto para la unidad $unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ForegroundColor Red
+            Escribir-Centrado "Formato incorrecto para la unidad $unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ColorDeFondo "Rojo"
             continue
         }
 
-        Write-Host "			 			  Métodos de protección para la unidad $unidad" -ForegroundColor Cyan
-
+        Escribir-Centrado "Reanudando cifrado/descifrado en la unidad $unidad" -ColorDeFondo "Cyan"
+		Escribir-Centrado ""
+		
         # Capturar la salida del comando manage-bde
-        $output = manage-bde $unidad -protectors -get -cn $equipo
+        $output = manage-bde -resume $unidad -cn $equipo
+
+        # Encontrar la longitud de la línea más larga
+        $maxLength = ($output | Measure-Object -Property Length -Maximum).Maximum
+
+        # Calcular el desplazamiento para alinear a la izquierda
+        $consoleWidth = $Host.UI.RawUI.WindowSize.Width
+        $leftPadding = [Math]::Max(0, ($consoleWidth - $maxLength) / 2)
 
         # Procesar y mostrar cada línea con el espaciado deseado
         $output | ForEach-Object {
-            Write-Host "			 			  $_"
+            $paddedLine = $_.TrimStart().PadRight($maxLength)
+            Write-Host (" " * $leftPadding) $paddedLine
         }
 
-        Write-Host
+        Escribir-Centrado ""
     }
 
-    Write-Host
-    Read-Host "			 			  Presiona Enter para volver al menú"
+    Escribir-Centrado ""
+    Escribir-Centrado "Presiona Enter para volver al menú" -NoNewline
+    Read-Host
+}
+
+function View-BitlockerKey {
+    Escribir-Centrado ""
+    Escribir-Centrado "Nombre del equipo [este]: " -NoNewline
+    $equipo = Read-Host
+		if ([string]::IsNullOrWhiteSpace($equipo)) {
+		$equipo = $env:COMPUTERNAME
+	}
+    Escribir-Centrado "Ver métodos de protección de las unidades (C:,D:,E:...) [C:]: " -NoNewline
+    $unidades = Read-Host
+		if ([string]::IsNullOrWhiteSpace($unidades)) {
+			$unidades = "C:"
+		}
+    Escribir-Centrado ""
+    Mostrar-BannerBit
+    Escribir-Centrado "===============================================" -ColorDeFondo "Rojo"
+    Escribir-Centrado "Métodos de protección BitLocker" -ColorDeFondo "Rojo"
+    Escribir-Centrado "===============================================" -ColorDeFondo "Rojo"
+    Escribir-Centrado ""
+
+    # Si no se especifican unidades, usar C: por defecto
+    if ([string]::IsNullOrWhiteSpace($unidades)) {
+        $unidadesArray = @("C:")
+    } else {
+        # Dividir las unidades ingresadas en un array
+        $unidadesArray = $unidades -split ',' | ForEach-Object { $_.Trim().ToUpper() }
+    }
+
+    foreach ($unidad in $unidadesArray) {
+        # Verificar si la unidad tiene el formato correcto
+        if ($unidad -notmatch '^[A-Z]:$') {
+            Escribir-Centrado "Formato incorrecto para la unidad $unidad. Debe ser una letra seguida de dos puntos (ej. C:)" -ColorDeFondo "Rojo"
+            continue
+        }
+
+        Escribir-Centrado "Métodos de protección para la unidad $unidad" -ColorDeFondo "Cyan"
+		Escribir-Centrado ""
+		
+        # Capturar la salida del comando manage-bde
+        $output = manage-bde $unidad -protectors -get -cn $equipo
+
+        # Encontrar la longitud de la línea más larga
+        $maxLength = ($output | Measure-Object -Property Length -Maximum).Maximum
+
+        # Calcular el desplazamiento para alinear a la izquierda
+        $consoleWidth = $Host.UI.RawUI.WindowSize.Width
+        $leftPadding = [Math]::Max(0, ($consoleWidth - $maxLength) / 2)
+
+        # Procesar y mostrar cada línea con el espaciado deseado
+        $output | ForEach-Object {
+            $paddedLine = $_.TrimStart().PadRight($maxLength)
+            Write-Host (" " * $leftPadding) $paddedLine
+        }
+
+        Escribir-Centrado ""
+    }
+
+    Escribir-Centrado ""
+    Escribir-Centrado "Presiona Enter para volver al menú" -NoNewline
+    Read-Host
 }
 
 function Menu-Bitlocker {
@@ -513,20 +624,16 @@ function Menu-Bitlocker {
             "6" { Bitlocker-Resume }
             "7" { View-BitlockerKey }
             "0" { 
-                Escribir-Centrado ""
+<#                 Escribir-Centrado ""
                 Escribir-Centrado "Volviendo al menú principal..." -ColorDeFondo "Verde"
                 Escribir-Centrado ""
-                Escribir-Centrado ""
+                Escribir-Centrado "" #>
                 return 
             }
             default { Escribir-Centrado "Opción incorrecta." -ColorDeFondo "Rojo" }
         }
-        if ($choice -ne '0') {
-            Escribir-Centrado ""
-            Escribir-Centrado "Presione cualquier tecla para continuar..."
-            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-        }
+
     } while ($true)
 }
 
-Menu-Bitlocker
+#Menu-Bitlocker
