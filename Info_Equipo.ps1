@@ -106,7 +106,7 @@ function Mostrar-MenuHardware {
 
         $menuItems = @(
 			
-			"===============================================",
+	    "===============================================",
 			"",
             "      Información de hardware en $NombreEquipo",
             "",
@@ -225,7 +225,7 @@ function Consultar-ResumenSistema {
         "Servidores DNS: $($network.DNSServerSearchOrder -join ', ')",
         "Dirección MAC: $($network.MACAddress)",
         "Usuario actual: $env:USERNAME",
-		"Último reinicio: $lastBootUpTime",
+	"Último reinicio: $lastBootUpTime",
         "Tiempo de actividad: $($uptime.Days) días, $($uptime.Hours) horas, $($uptime.Minutes) minutos"
         
     )
@@ -807,11 +807,6 @@ function Consultar-InfoUsuarios {
 
     $Global:InfoUsuariosHTML = $Global:InfoUsuariosHTML -join ""
 
-<#     if (-not $ParaHTML) {
-        Escribir-Centrado ""
-        Escribir-Centrado "Presiona cualquier tecla para continuar..."
-        [void][System.Console]::ReadKey($true)
-    } #>
 }
 
 function Consultar-Políticas {
@@ -829,9 +824,7 @@ function Consultar-Políticas {
     Escribir-Centrado ""
 
     try {
-        # Ejecutar gpresult /r y filtrar las líneas no deseadas
-		
-        $gpresultOutput = gpresult /r /s $NombreEquipo | 
+        $gpresultOutput = gpresult /r /s $NombreEquipo | # Ejecutar gpresult /r y filtrar las líneas no deseadas
             Select-Object -Skip 9 |  # Omitir las primeras 9 líneas
             Where-Object { $_ -notmatch "Creado el" } |  # Omitir la línea que contiene "Creado el"
             ForEach-Object { $_.Trim() } |  # Eliminar espacios en blanco al inicio y final de cada línea
@@ -1342,14 +1335,14 @@ function Exportar-InfoSistema {
 		@{Titulo="Baterías"; Contenido=(Format-Content $Global:InfoBateriaHTML)},
 		@{Titulo="Actualizaciones"; Contenido=(Format-Content $Global:InfoActualizacionesHTML)},
 		@{Titulo="Sistema operativo"; Contenido=(Format-Content $Global:InfoSOHTML)},
-        @{Titulo="Servicios relevantes"; Contenido=(Format-Content (Consultar-EstadoServicios -NombreEquipo))},
-        @{Titulo="Usuarios"; Contenido=(Format-Content (Consultar-Usuarios -NombreEquipo))},
-        @{Titulo="Políticas y grupos"; Contenido=(Format-Content (Consultar-PoliticasGrupos -NombreEquipo))},
-        @{Titulo="Controladores"; Contenido=(Format-Content (Consultar-Controladores -NombreEquipo))},
-        @{Titulo="Software instalado ordenado por fabricante"; Contenido=(Consultar-SoftwareInstalado -ParaHTML -NombreEquipo $NombreEquipo)}
-        @{Titulo="Arranque"; Contenido=(Format-Content (Consultar-Arranque -NombreEquipo))},
-        @{Titulo="Energía"; Contenido=(Format-Content (Consultar-Energia -NombreEquipo))},
-        @{Titulo="Seguridad"; Contenido=(Format-Content (Consultar-Seguridad -NombreEquipo))}
+        	@{Titulo="Servicios relevantes"; Contenido=(Format-Content (Consultar-EstadoServicios -NombreEquipo))},
+        	@{Titulo="Usuarios"; Contenido=(Format-Content (Consultar-Usuarios -NombreEquipo))},
+        	@{Titulo="Políticas y grupos"; Contenido=(Format-Content (Consultar-PoliticasGrupos -NombreEquipo))},
+        	@{Titulo="Controladores"; Contenido=(Format-Content (Consultar-Controladores -NombreEquipo))},
+        	@{Titulo="Software instalado ordenado por fabricante"; Contenido=(Consultar-SoftwareInstalado -ParaHTML -NombreEquipo $NombreEquipo)}
+        	@{Titulo="Arranque"; Contenido=(Format-Content (Consultar-Arranque -NombreEquipo))},
+        	@{Titulo="Energía"; Contenido=(Format-Content (Consultar-Energia -NombreEquipo))},
+        	@{Titulo="Seguridad"; Contenido=(Format-Content (Consultar-Seguridad -NombreEquipo))}
    )
 	
     # Función para generar el contenido HTML
