@@ -1,4 +1,58 @@
-﻿function Mostrar-BannerTol {
+﻿function Escribir-Centrado {
+    param(
+        [string]$Texto,
+        [string]$ColorDeFondo = $host.UI.RawUI.ForegroundColor,
+        [string]$ColorDeFondoFondo = $host.UI.RawUI.BackgroundColor,
+        [int]$Desplazamiento = 0,  # Número de espacios para desplazar el texto
+        [switch]$NoNewline
+    )
+
+    $colores = @{
+        "Amarillo" = "Yellow"
+        "Azul" = "Blue"
+        "Rojo" = "Red"
+        "Verde" = "Green"
+        "Cyan" = "Cyan"
+        "Magenta" = "Magenta"
+        "Blanco" = "White"
+        "Negro" = "Black"
+        "Gris" = "Gray"
+        "GrisOscuro" = "DarkGray"
+        "AzulOscuro" = "DarkBlue"
+        "VerdeOscuro" = "DarkGreen"
+        "CyanOscuro" = "DarkCyan"
+        "RojoOscuro" = "DarkRed"
+        "MagentaOscuro" = "DarkMagenta"
+        "AmarilloOscuro" = "DarkYellow"
+    }
+
+    # Reemplazar el operador de fusión nula (??) con una estructura if-else
+    if ($colores.ContainsKey($ColorDeFondo)) {
+        $ColorDeFondo = $colores[$ColorDeFondo]
+    }
+    if ($colores.ContainsKey($ColorDeFondoFondo)) {
+        $ColorDeFondoFondo = $colores[$ColorDeFondoFondo]
+    }
+
+    $anchoConsola = $Host.UI.RawUI.WindowSize.Width
+    $longitudTexto = $Texto.Length
+    $rellenoIzquierdo = [math]::Max(0, [math]::Floor(($anchoConsola - $longitudTexto) / 2)) + $Desplazamiento
+    $lineaCentrada = (" " * $rellenoIzquierdo) + $Texto
+
+    $parametros = @{
+        Object = $lineaCentrada
+        ForegroundColor = $ColorDeFondo
+        BackgroundColor = $ColorDeFondoFondo
+    }
+
+    if ($NoNewline) {
+        $parametros.Add("NoNewline", $true)
+    }
+
+    Write-Host @parametros
+}
+
+function Mostrar-BannerTol {
     param (
         [switch]$Continuo
     )
@@ -8,12 +62,12 @@
 
         # Banner ASCII
         $banner = @(
-"████████╗ ██████╗  ██████╗ ██╗     ██╗  ██╗██╗████████╗"
-"╚══██╔══╝██╔═══██╗██╔═══██╗██║     ██║ ██╔╝██║╚══██╔══╝"
-"   ██║   ██║   ██║██║   ██║██║     █████╔╝ ██║   ██║   "
-"   ██║   ██║   ██║██║   ██║██║     ██╔═██╗ ██║   ██║   "
-"   ██║   ╚██████╔╝╚██████╔╝███████╗██║  ██╗██║   ██║   "
-"   ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝   ╚═╝   "
+			"████████╗ ██████╗  ██████╗ ██╗     ██╗  ██╗██╗████████╗"
+			"╚══██╔══╝██╔═══██╗██╔═══██╗██║     ██║ ██╔╝██║╚══██╔══╝"
+			"   ██║   ██║   ██║██║   ██║██║     █████╔╝ ██║   ██║   "
+			"   ██║   ██║   ██║██║   ██║██║     ██╔═██╗ ██║   ██║   "
+			"   ██║   ╚██████╔╝╚██████╔╝███████╗██║  ██╗██║   ██║   "
+			"   ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝   ╚═╝   "
         )
 
         $maxWidth = ($banner | Measure-Object -Property Length -Maximum).Maximum
@@ -64,28 +118,49 @@ function Mostrar-ToolKit {
     )
 
     function Dibujar-Menu {
+        $consoleWidth = $Host.UI.RawUI.WindowSize.Width
+
+        $menuItems = @(
+			
+			"===============================================",
+			"",
+            "      Información de hardware en $NombreEquipo",
+            "",
+            "==============================================="
+			"",
+            " 1. Apagar equipo remoto",
+            " 2. Reiniciar equipo remoto",
+            " 3. Sesiones y usuarios activos remoto",
+            " 4. Firma ES equipo remoto (no funciona)",
+            " 5. Firma PT equipo remoto (no funciona)",
+            " 6. PSTools / CMD equipo remoto",
+            " 7. PSTools / PowerShell equipo remoto",
+            " 8. Número de serie equipo remoto",
+            " 9. OCS equipo remoto",
+            " 0. Salir",
+            "",
+            "==============================================="
+        )
+
+        $maxWidth = ($menuItems | Measure-Object -Property Length -Maximum).Maximum
+        $leftPadding = [math]::Max(0, [math]::Floor(($consoleWidth - $maxWidth) / 2))
+
         Clear-Host
         $host.UI.RawUI.BackgroundColor = "Black"
         Mostrar-BannerTol
 
-        Escribir-Centrado "======================================"
-        Escribir-Centrado ""
-        Escribir-Centrado "Tool Kit ejecutándose desde $NombreEquipo"
-        Escribir-Centrado ""
-        Escribir-Centrado "======================================"
-        Escribir-Centrado ""
-        Escribir-Centrado "1. Apagar equipo remoto"
-        Escribir-Centrado "2. Reiniciar equipo remoto"
-        Escribir-Centrado "3. Sesiones y usuarios activos remoto"
-        Escribir-Centrado "4. Firma ES equipo remoto (no funciona)"
-        Escribir-Centrado "5. Firma PT equipo remoto (no funciona)"
-        Escribir-Centrado "6. PSTools / CMD equipo remoto"
-        Escribir-Centrado "7. PSTools / PowerShell equipo remoto"
-        Escribir-Centrado "8. Número de serie equipo remoto"
-        Escribir-Centrado "9. OCS equipo remoto"
-        Escribir-Centrado "0. Volver al menú principal"
-        Escribir-Centrado ""
-        Escribir-Centrado "======================================"
+        foreach ($item in $menuItems) {
+            $centeredLine = (" " * $leftPadding) + $item
+            if ($item -match "Información de hardware en") {
+                Write-Host $centeredLine -ForegroundColor Yellow
+            } elseif ($item -match "^[0-9]+\.") {
+                Write-Host $centeredLine
+            } elseif ($item -match "={3,}") {
+                Write-Host $centeredLine
+            } else {
+                Write-Host $centeredLine
+            }
+        }
 
         if ($Continuo) {
             Escribir-Centrado "`nPresiona Ctrl+C para salir"
@@ -114,11 +189,11 @@ function Mostrar-ToolKit {
     }
 }
 
-
 function Apagar-EquipoRemoto {
-    Write-Host ""
-    $equipo = Read-Host "			 			  Nombre del equipo a apagar"
-    Write-Host ""
+    Escribir-Centrado ""
+    Escribir-Centrado "Nombre del equipo a apagar: " -NoNewline
+    $equipo = Read-Host
+    Escribir-Centrado ""
     
     try {
         $result = & "C:\PSTools\PsExec.exe" \\$equipo -s shutdown /s /f /t 0 2>&1 | 
@@ -133,26 +208,30 @@ function Apagar-EquipoRemoto {
             }
         
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "			 			  El equipo remoto $equipo se apagará inmediatamente." -ForegroundColor Green
+            Escribir-Centrado "El equipo remoto $equipo se apagará inmediatamente." -ColorDeFondo "Verde"
         } else {
             $errorMessage = $result -join " "
             if ($errorMessage) {
-                Write-Host "			 			  Error al apagar el equipo $equipo`: $errorMessage" -ForegroundColor Red
+                Escribir-Centrado "Error al apagar el equipo $equipo': $errorMessage" -ColorDeFondo "Rojo"
             } else {
-                Write-Host "			 			  Error al apagar el equipo $equipo." -ForegroundColor Red
+                Escribir-Centrado "Error al apagar el equipo $equipo." -ColorDeFondo "Rojo"
             }
         }
     } catch {
-        Write-Host "			 			  Error al ejecutar el comando: $_" -ForegroundColor Red
+        Escribir-Centrado "Error al ejecutar el comando: $_" -ColorDeFondo "Rojo"
     }
     
-    Pause-Script
+    Escribir-Centrado ""
+    Escribir-Centrado "Presione Enter para continuar..." -NoNewline
+    Read-Host
+
     Mostrar-ToolKit
 }
 
 function Reiniciar-EquipoRemoto {
     $computerName = $env:COMPUTERNAME
-    $equipo = Read-Host "			 			  Nombre del equipo que quieres reiniciar"
+    Escribir-Centrado "Nombre del equipo que quieres reiniciar: " -NoNewline
+    $equipo = Read-Host
     
     try {
         $result = & "C:\PSTools\PsExec.exe" \\$equipo -s shutdown /r /t 0 2>&1 | 
@@ -168,79 +247,90 @@ function Reiniciar-EquipoRemoto {
             }
 
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "			 			  Reiniciando equipo $equipo..." -ForegroundColor Green
+            Escribir-Centrado "Reiniciando equipo $equipo..." -ColorDeFondo "Verde"
         } else {
-            Write-Host "			 			  Error al reiniciar el equipo $equipo." -ForegroundColor Red
+            Escribir-Centrado "Error al reiniciar el equipo $equipo." -ColorDeFondo "Rojo"
             if ($result) {
                 $filteredResult = $result | Where-Object { $_ -match '\S' }  # Filtrar líneas vacías
                 if ($filteredResult) {
-                    Write-Host "			 			  Mensaje de error:" -ForegroundColor Red
-                    $filteredResult | ForEach-Object { Write-Host "			 			  $_" -ForegroundColor Red }
+                    Escribir-Centrado "Mensaje de error:" -ColorDeFondo "Rojo"
+                    $filteredResult | ForEach-Object { Escribir-Centrado $_ -ColorDeFondo "Rojo" }
                 }
             }
         }
     } catch {
-        Write-Host "			 			  Error al ejecutar el comando: $_" -ForegroundColor Red
+        Escribir-Centrado "Error al ejecutar el comando: $_" -ColorDeFondo "Rojo"
     }
     
-    Pause-Script
+    Escribir-Centrado ""
+    Escribir-Centrado "Presione Enter para continuar..." -NoNewline
+    Read-Host
+
     Mostrar-ToolKit
 }
 
 function SesionesUsuarios-EquipoRemoto {
-    Write-Host ""
-    $equipo = Read-Host "			 			  Nombre del equipo [este]"
-    Write-Host ""
+    Escribir-Centrado ""
+    Escribir-Centrado "Nombre del equipo [este]: " -NoNewline
+    $equipo = Read-Host
+    if ([string]::IsNullOrWhiteSpace($equipo)) {
+        $equipo = $env:COMPUTERNAME
+    }
+    Escribir-Centrado ""
     
     $sesiones = query session /server:$equipo 2>&1
     if ($sesiones -is [string]) {
-        Write-Host "			 			  $sesiones"
+        Escribir-Centrado $sesiones
     } else {
-        $sesiones | ForEach-Object { Write-Host "			 			  $_" }
+        $sesiones | ForEach-Object { Escribir-Centrado $_ }
     }
     
-    Write-Host ""
+    Escribir-Centrado ""
     $usuarios = query user /server:$equipo 2>&1
     if ($usuarios -is [string]) {
-        Write-Host "			 			  $usuarios"
+        Escribir-Centrado $usuarios
     } else {
-        $usuarios | ForEach-Object { Write-Host "			 			  $_" }
+        $usuarios | ForEach-Object { Escribir-Centrado $_ }
     }
     
     if ($sesiones -notmatch "No existe un usuario para" -and $usuarios -notmatch "No existe un usuario para") {
-        $sesionID = Read-Host "			 			  Número ID de la sesión a cerrar"
+        Escribir-Centrado "Número ID de la sesión a cerrar: " -NoNewline
+        $sesionID = Read-Host
         
         try {
             $result = logoff $sesionID /server:$equipo 2>&1
             if ($LASTEXITCODE -eq 0) {
-                Write-Host "			 			  Sesión cerrada" -ForegroundColor Green
+                Escribir-Centrado "Sesión cerrada" -ColorDeFondo "Verde"
             } else {
-                Write-Host "			 			  Error al cerrar la sesión: $result" -ForegroundColor Red
+                Escribir-Centrado "Error al cerrar la sesión: $result" -ColorDeFondo "Rojo"
             }
         } catch {
-            Write-Host "			 			  Error al ejecutar el comando: $_" -ForegroundColor Red
+            Escribir-Centrado "Error al ejecutar el comando: $_" -ColorDeFondo "Rojo"
         }
     }
     
-    Pause-Script
+    Escribir-Centrado ""
+    Escribir-Centrado "Presione Enter para continuar..." -NoNewline
+    Read-Host
+
     Mostrar-ToolKit
 }
 
 function FirmaES-EquipoRemoto {
-    Write-Host ""
-    $equipo = Read-Host "                       Nombre equipo"
-    Write-Host ""
+    Escribir-Centrado ""
+    Escribir-Centrado "Nombre equipo: " -NoNewline
+    $equipo = Read-Host
+    Escribir-Centrado ""
     
-    $scriptPath = "\\seresco.red\recursos\rep\correo\Firmas2022\firma_seresco_2022.ps1"
+    $scriptPath = "\\seresco.red\recursos\rep\correo\Firmas2022\firma_seresco_2022"
     $psExecPath = "C:\PSTOOLS\PsExec.exe" # Asegúrate de que esta ruta sea correcta
 
     try {
-        # Obtener la lista de usuarios conectados en el equipo remoto
-        Write-Host "                       Obteniendo lista de usuarios..."
+        Escribir-Centrado "Obteniendo lista de usuarios..." -ColorDeFondo "Cyan"
         $sesiones = quser /server:$equipo 2>&1
         
         if ($LASTEXITCODE -eq 0 -and $sesiones -notmatch "No existe un usuario para") {
-            Write-Host "                       Usuarios conectados en $equipo`:"
+            Escribir-Centrado "Usuarios conectados en $equipo':" -ColorDeFondo "Cyan"
             $usuarios = $sesiones | Select-Object -Skip 1 | ForEach-Object {
                 $linea = $_ -split '\s+'
                 if ($linea.Count -ge 3) {
@@ -250,64 +340,67 @@ function FirmaES-EquipoRemoto {
                     }
                 }
             }
-            $usuarios | Format-Table -AutoSize | Out-String | ForEach-Object { Write-Host "                       $_" }
+            $usuariosFormateados = $usuarios | Format-Table -AutoSize | Out-String
+            $usuariosFormateados -split "`n" | ForEach-Object { Escribir-Centrado $_ }
             
-            # Pedir al usuario que elija un nombre de usuario
-            $usuarioElegido = Read-Host "                       Introduzca el nombre del usuario para ejecutar el script"
+            Escribir-Centrado "Introduzca el nombre del usuario para ejecutar el script: " -NoNewline
+            $usuarioElegido = Read-Host
             
-            # Verificar si el usuario elegido está en la lista
             $usuarioEncontrado = $usuarios | Where-Object { $_.Usuario -eq $usuarioElegido }
             
             if (-not $usuarioEncontrado) {
-                Write-Host "                       El usuario elegido no está en la lista de usuarios conectados." -ForegroundColor Red
-                Write-Host "                       Usuarios disponibles: $($usuarios.Usuario -join ', ')" -ForegroundColor Yellow
-                Pause-Script
+                Escribir-Centrado "El usuario elegido no está en la lista de usuarios conectados." -ColorDeFondo "Rojo"
+                Escribir-Centrado "Usuarios disponibles: $($usuarios.Usuario -join ', ')" -ColorDeFondo "Amarillo"
+                Escribir-Centrado "Presione Enter para continuar..." -NoNewline
+                Read-Host
                 return
             }
             
-            # Ejecutar el script como el usuario seleccionado usando PsExec
-            Write-Host "                       Ejecutando script como $usuarioElegido..."
+            Escribir-Centrado "Ejecutando script como $usuarioElegido..." -ColorDeFondo "Cyan"
             
             $comando = "$psExecPath \\$equipo -u $usuarioElegido -i powershell.exe -ExecutionPolicy Bypass -File `"$scriptPath`""
             
-            Write-Host "                       Comando a ejecutar: $comando" -ForegroundColor Cyan
+            Escribir-Centrado "Comando a ejecutar: $comando" -ColorDeFondo "Cyan"
             
             $result = Invoke-Expression $comando
 
             if ($result) {
-                Write-Host "                       Resultado de la ejecución:" -ForegroundColor Green
-                $result | ForEach-Object { Write-Host "                       $_" }
+                Escribir-Centrado "Resultado de la ejecución:" -ColorDeFondo "Verde"
+                $result | ForEach-Object { Escribir-Centrado $_ }
             } else {
-                Write-Host "                       No se recibió ningún resultado de la ejecución." -ForegroundColor Yellow
+                Escribir-Centrado "No se recibió ningún resultado de la ejecución." -ColorDeFondo "Amarillo"
             }
         } else {
-            Write-Host "                       No se encontraron usuarios conectados en el equipo $equipo." -ForegroundColor Yellow
-            Write-Host "                       Volviendo al menú principal..." -ForegroundColor Cyan
+            Escribir-Centrado "No se encontraron usuarios conectados en el equipo $equipo." -ColorDeFondo "Amarillo"
+            Escribir-Centrado "Volviendo al menú principal..." -ColorDeFondo "Cyan"
         }
         
     } catch {
-        Write-Host "                       Error: $_" -ForegroundColor Red
+        Escribir-Centrado "Error: $_" -ColorDeFondo "Rojo"
     }
     
-    Pause-Script
+    Escribir-Centrado ""
+    Escribir-Centrado "Presione Enter para continuar..." -NoNewline
+    Read-Host
+
     Mostrar-ToolKit
 }
 
 function FirmaPT-EquipoRemoto {
-    Write-Host ""
-    $equipo = Read-Host "                       Nombre equipo"
-    Write-Host ""
+    Escribir-Centrado ""
+    Escribir-Centrado "Nombre equipo: " -NoNewline
+    $equipo = Read-Host
+    Escribir-Centrado ""
     
     $scriptPath = "\\seresco.red\recursos\rep\correo\Firmas2022\firma_seresco_PT_2022"
     $psExecPath = "C:\PSTOOLS\PsExec.exe" # Asegúrate de que esta ruta sea correcta
 
     try {
-        # Obtener la lista de usuarios conectados en el equipo remoto
-        Write-Host "                       Obteniendo lista de usuarios..."
+        Escribir-Centrado "Obteniendo lista de usuarios..." -ColorDeFondo "Cyan"
         $sesiones = quser /server:$equipo 2>&1
         
         if ($LASTEXITCODE -eq 0 -and $sesiones -notmatch "No existe un usuario para") {
-            Write-Host "                       Usuarios conectados en $equipo`:"
+            Escribir-Centrado "Usuarios conectados en $equipo':" -ColorDeFondo "Cyan"
             $usuarios = $sesiones | Select-Object -Skip 1 | ForEach-Object {
                 $linea = $_ -split '\s+'
                 if ($linea.Count -ge 3) {
@@ -317,94 +410,104 @@ function FirmaPT-EquipoRemoto {
                     }
                 }
             }
-            $usuarios | Format-Table -AutoSize | Out-String | ForEach-Object { Write-Host "                       $_" }
+            $usuariosFormateados = $usuarios | Format-Table -AutoSize | Out-String
+            $usuariosFormateados -split "`n" | ForEach-Object { Escribir-Centrado $_ }
             
-            # Pedir al usuario que elija un nombre de usuario
-            $usuarioElegido = Read-Host "                       Introduzca el nombre del usuario para ejecutar el script"
+            Escribir-Centrado "Introduzca el nombre del usuario para ejecutar el script: " -NoNewline
+            $usuarioElegido = Read-Host
             
-            # Verificar si el usuario elegido está en la lista
             $usuarioEncontrado = $usuarios | Where-Object { $_.Usuario -eq $usuarioElegido }
             
             if (-not $usuarioEncontrado) {
-                Write-Host "                       El usuario elegido no está en la lista de usuarios conectados." -ForegroundColor Red
-                Write-Host "                       Usuarios disponibles: $($usuarios.Usuario -join ', ')" -ForegroundColor Yellow
-                Pause-Script
+                Escribir-Centrado "El usuario elegido no está en la lista de usuarios conectados." -ColorDeFondo "Rojo"
+                Escribir-Centrado "Usuarios disponibles: $($usuarios.Usuario -join ', ')" -ColorDeFondo "Amarillo"
+                Escribir-Centrado "Presione Enter para continuar..." -NoNewline
+                Read-Host
                 return
             }
             
-            # Ejecutar el script como el usuario seleccionado usando PsExec
-            Write-Host "                       Ejecutando script como $usuarioElegido..."
+            Escribir-Centrado "Ejecutando script como $usuarioElegido..." -ColorDeFondo "Cyan"
             
             $comando = "$psExecPath \\$equipo -u $usuarioElegido -i powershell.exe -ExecutionPolicy Bypass -File `"$scriptPath`""
             
-            Write-Host "                       Comando a ejecutar: $comando" -ForegroundColor Cyan
+            Escribir-Centrado "Comando a ejecutar: $comando" -ColorDeFondo "Cyan"
             
             $result = Invoke-Expression $comando
 
             if ($result) {
-                Write-Host "                       Resultado de la ejecución:" -ForegroundColor Green
-                $result | ForEach-Object { Write-Host "                       $_" }
+                Escribir-Centrado "Resultado de la ejecución:" -ColorDeFondo "Verde"
+                $result | ForEach-Object { Escribir-Centrado $_ }
             } else {
-                Write-Host "                       No se recibió ningún resultado de la ejecución." -ForegroundColor Yellow
+                Escribir-Centrado "No se recibió ningún resultado de la ejecución." -ColorDeFondo "Amarillo"
             }
         } else {
-            Write-Host "                       No se encontraron usuarios conectados en el equipo $equipo." -ForegroundColor Yellow
-            Write-Host "                       Volviendo al menú principal..." -ForegroundColor Cyan
+            Escribir-Centrado "No se encontraron usuarios conectados en el equipo $equipo." -ColorDeFondo "Amarillo"
+            Escribir-Centrado "Volviendo al menú principal..." -ColorDeFondo "Cyan"
         }
         
     } catch {
-        Write-Host "                       Error: $_" -ForegroundColor Red
+        Escribir-Centrado "Error: $_" -ColorDeFondo "Rojo"
     }
     
-    Pause-Script
+    Escribir-Centrado ""
+    Escribir-Centrado "Presione Enter para continuar..." -NoNewline
+    Read-Host
+
     Mostrar-ToolKit
 }
 
 function PSToolsCMD-EquipoRemoto {
-    Write-Host ""
-    $equipo = Read-Host "			 			  Nombre de equipo"
+    Escribir-Centrado ""
+    Escribir-Centrado "Nombre de equipo: " -NoNewline
+    $equipo = Read-Host
     $psExecPath = "C:\PSTools\PsExec.exe" # Asegúrate de que esta ruta sea correcta
-    $indentation = "			 			  " # Espacios para el desplazamiento a la derecha
 
-    Write-Host "$indentationIniciando sesión CMD remota en $equipo..." -ForegroundColor Cyan
+    Escribir-Centrado "Iniciando sesión CMD remota en $equipo..." -ColorDeFondo "Cyan"
     
     # Ejecutamos PsExec directamente
     & $psExecPath "\\$equipo" -accepteula cmd
 
-    Write-Host "$indentationSesión CMD remota finalizada." -ForegroundColor Green
+    Escribir-Centrado "Sesión CMD remota finalizada." -ColorDeFondo "Verde"
 
-    Pause-Script
+    Escribir-Centrado ""
+    Escribir-Centrado "Presione Enter para continuar..." -NoNewline
+    Read-Host
+
     Mostrar-ToolKit
 }
 
 function PSToolsPS-EquipoRemoto {
-    Write-Host ""
-    $equipo = Read-Host "			 			  Nombre de equipo"
+    Escribir-Centrado ""
+    Escribir-Centrado "Nombre de equipo: " -NoNewline
+    $equipo = Read-Host
     $psExecPath = "C:\PSTools\PsExec.exe" # Asegúrate de que esta ruta sea correcta
-    $indentation = "			 			  " # Espacios para el desplazamiento a la derecha
 
-    Write-Host "$indentationIniciando sesión PowerShell remota en $equipo..." -ForegroundColor Cyan
+    Escribir-Centrado "Iniciando sesión PowerShell remota en $equipo..." -ColorDeFondo "Cyan"
     
     & $psExecPath "\\$equipo" -accepteula PowerShell.exe
 
-    Write-Host "$indentationSesión PowerShell remota finalizada." -ForegroundColor Green
+    Escribir-Centrado "Sesión PowerShell remota finalizada." -ColorDeFondo "Verde"
 
-    Pause-Script
+    Escribir-Centrado ""
+    Escribir-Centrado "Presione Enter para continuar..." -NoNewline
+    Read-Host
+
+    Mostrar-ToolKit
 }
 
 function NumeroSerie-EquipoRemoto {
-    Write-Host ""
-    $equipo = Read-Host "			 			  Nombre de equipo [este]"
+    Escribir-Centrado ""
+    Escribir-Centrado "Nombre de equipo [este]: " -NoNewline
+    $equipo = Read-Host
     $psExecPath = "C:\PSTools\PsExec.exe" # Asegúrate de que esta ruta sea correcta
-    $indentation = "			 			  " # Espacios para el desplazamiento a la derecha
 
     if ([string]::IsNullOrWhiteSpace($equipo)) {
         $equipo = $env:COMPUTERNAME
-        Write-Host "$indentation Usando el equipo local: $equipo" -ForegroundColor Cyan
+        Escribir-Centrado "Usando el equipo local: $equipo" -ColorDeFondo "Cyan"
     }
 
     try {
-        Write-Host "$indentation Obteniendo número de serie de $equipo..." -ForegroundColor Cyan
+        Escribir-Centrado "Obteniendo número de serie de $equipo..." -ColorDeFondo "Cyan"
         
         if ($equipo -eq $env:COMPUTERNAME) {
             # Si es el equipo local, usamos directamente wmic
@@ -425,33 +528,37 @@ function NumeroSerie-EquipoRemoto {
         } | Select-Object -First 1 | ForEach-Object { $_.Trim() }
 
         if ($serialNumber) {
-            Write-Host "$indentation Número de serie: $serialNumber" -ForegroundColor Green
+            Escribir-Centrado "Número de serie: $serialNumber" -ColorDeFondo "Verde"
         } else {
-            Write-Host "$indentation No se pudo obtener el número de serie." -ForegroundColor Yellow
+            Escribir-Centrado "No se pudo obtener el número de serie." -ColorDeFondo "Amarillo"
             if ($error_output) {
-                Write-Host "$indentation Error: $error_output" -ForegroundColor Red
+                Escribir-Centrado "Error: $error_output" -ColorDeFondo "Rojo"
             }
         }
     } catch {
-        Write-Host "$indentation Error: $_" -ForegroundColor Red
+        Escribir-Centrado "Error: $_" -ColorDeFondo "Rojo"
     }
 
-    Pause-Script
+    Escribir-Centrado ""
+    Escribir-Centrado "Presione Enter para continuar..." -NoNewline
+    Read-Host
+
     Mostrar-ToolKit
 }
 
 function OCS-EquipoRemoto {
-    Write-Host ""
-    $equipo = Read-Host "						  Nombre de equipo"
+    Escribir-Centrado ""
+    Escribir-Centrado "Nombre de equipo: " -NoNewline
+    $equipo = Read-Host
     $psExecPath = "C:\PSTools\PsExec.exe" # Asegúrate de que esta ruta sea correcta
     $ocsPath = "C:\Program Files (x86)\OCS Inventory Agent\OCSInventory.exe"
-    $indentation = "						  " # Espacios para el desplazamiento a la derecha
 
-    Write-Host "$indentation Intentando conectar con $equipo..." -ForegroundColor Cyan
+    Escribir-Centrado "Intentando conectar con $equipo..." -ColorDeFondo "Cyan"
     
     if (-not (Test-Path $psExecPath)) {
-        Write-Host "$indentation Error: PsExec no encontrado en $psExecPath" -ForegroundColor Red
-        Pause-Script
+        Escribir-Centrado "Error: PsExec no encontrado en $psExecPath" -ColorDeFondo "Rojo"
+        Escribir-Centrado "Presione Enter para continuar..." -NoNewline
+        Read-Host
         return
     }
 
@@ -462,29 +569,33 @@ function OCS-EquipoRemoto {
 
         if ($exitCode -eq 0) {
             # Solo mostramos el mensaje en verde si la ejecución fue exitosa
-            Write-Host "$indentation Petición OCS enviada con éxito para $equipo" -ForegroundColor Green
+            Escribir-Centrado "Petición OCS enviada con éxito para $equipo" -ColorDeFondo "Verde"
         } else {
-            Write-Host "$indentation Error al enviar petición OCS para $equipo (Código de salida: $exitCode)" -ForegroundColor Red
-            Write-Host "$indentation Detalles del error:" -ForegroundColor Red
-            $output | ForEach-Object { Write-Host "$indentation $_" -ForegroundColor Red }
+            Escribir-Centrado "Error al enviar petición OCS para $equipo (Código de salida: $exitCode)" -ColorDeFondo "Rojo"
+            Escribir-Centrado "Detalles del error:" -ColorDeFondo "Rojo"
+            $output | ForEach-Object { Escribir-Centrado $_ -ColorDeFondo "Rojo" }
             # No continuamos con el script si hay un error
             return
         }
     } catch {
-        Write-Host "$indentation Error inesperado al ejecutar PsExec: $_" -ForegroundColor Red
-        Write-Host "$indentation Stack Trace: $($_.ScriptStackTrace)" -ForegroundColor Red
+        Escribir-Centrado "Error inesperado al ejecutar PsExec: $_" -ColorDeFondo "Rojo"
+        Escribir-Centrado "Stack Trace: $($_.ScriptStackTrace)" -ColorDeFondo "Rojo"
         # No continuamos con el script si hay una excepción
         return
     }
 
-    Pause-Script
+    Escribir-Centrado ""
+    Escribir-Centrado "Presione Enter para continuar..." -NoNewline
+    Read-Host
+
     Mostrar-ToolKit
 }
 
 function Menu-ToolKit {
     do {
         Mostrar-ToolKit
-        $option = Read-Host "						  Seleccione una opción"
+        Escribir-Centrado "Seleccione una opción: " -NoNewline
+        $option = Read-Host
         
         switch ($option) {
             "1" { Apagar-EquipoRemoto }
@@ -497,20 +608,26 @@ function Menu-ToolKit {
             "8" { NumeroSerie-EquipoRemoto }
             "9" { OCS-EquipoRemoto }
             "0" { 
-
                 return 
             }
             default { 
-                Write-Host "						  Opción incorrecta, selecciona una opción válida." -ForegroundColor Red
+                Escribir-Centrado "Opción incorrecta, selecciona una opción válida." -ColorDeFondo "Rojo"
                 Start-Sleep -Seconds 2
             }
         }
         
         if ($option -ne '0') {
-            Write-Host "`n						  Presione cualquier tecla para continuar..."
-            [void][System.Console]::ReadKey($true)
+            Escribir-Centrado ""
+            Escribir-Centrado "Presione Enter para continuar..." -ColorDeFondo "Verde" -NoNewline
+            Read-Host
         }
     } while ($true)
 }
 
-Menu-ToolKit
+function Pause-Script {
+    Write-Host ""
+	Write-Host "Presione una tecla para continuar..."
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+}
+
+#Menu-ToolKit

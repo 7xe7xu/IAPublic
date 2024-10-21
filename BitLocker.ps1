@@ -26,19 +26,30 @@
         "AmarilloOscuro" = "DarkYellow"
     }
 
-    $ColorDeFondo = $colores[$ColorDeFondo] ?? $ColorDeFondo
-    $ColorDeFondoFondo = $colores[$ColorDeFondoFondo] ?? $ColorDeFondoFondo
+    # Reemplazar el operador de fusión nula (??) con una estructura if-else
+    if ($colores.ContainsKey($ColorDeFondo)) {
+        $ColorDeFondo = $colores[$ColorDeFondo]
+    }
+    if ($colores.ContainsKey($ColorDeFondoFondo)) {
+        $ColorDeFondoFondo = $colores[$ColorDeFondoFondo]
+    }
 
     $anchoConsola = $Host.UI.RawUI.WindowSize.Width
     $longitudTexto = $Texto.Length
     $rellenoIzquierdo = [math]::Max(0, [math]::Floor(($anchoConsola - $longitudTexto) / 2)) + $Desplazamiento
     $lineaCentrada = (" " * $rellenoIzquierdo) + $Texto
 
-    if ($NoNewline) {
-        Write-Host $lineaCentrada -ForegroundColor $ColorDeFondo -BackgroundColor $ColorDeFondoFondo -NoNewline
-    } else {
-        Write-Host $lineaCentrada -ForegroundColor $ColorDeFondo -BackgroundColor $ColorDeFondoFondo
+    $parametros = @{
+        Object = $lineaCentrada
+        ForegroundColor = $ColorDeFondo
+        BackgroundColor = $ColorDeFondoFondo
     }
+
+    if ($NoNewline) {
+        $parametros.Add("NoNewline", $true)
+    }
+
+    Write-Host @parametros
 }
 
 function Mostrar-BannerBit {
